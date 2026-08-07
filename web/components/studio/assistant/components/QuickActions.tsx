@@ -1,7 +1,11 @@
 "use client";
 
 import {
+  Bot,
+  Brain,
   Code2,
+  Database,
+  Globe,
   Image,
   Music4,
   Search,
@@ -10,45 +14,109 @@ import {
 } from "lucide-react";
 
 const actions = [
-  { title: "Generate Code", icon: Code2 },
-  { title: "Create Image", icon: Image },
-  { title: "Create Video", icon: Video },
-  { title: "Compose Music", icon: Music4 },
-  { title: "Research", icon: Search },
-  { title: "Automation", icon: Workflow },
+  {
+    title: "Generate Code",
+    description: "Build websites, apps and APIs with AI.",
+    icon: Code2,
+  },
+  {
+    title: "Create Image",
+    description: "Generate AI artwork and graphics.",
+    icon: Image,
+  },
+  {
+    title: "Generate Video",
+    description: "Create AI videos and animations.",
+    icon: Video,
+  },
+  {
+    title: "Compose Music",
+    description: "Produce songs and background music.",
+    icon: Music4,
+  },
+  {
+    title: "Research",
+    description: "Search and summarize information.",
+    icon: Search,
+  },
+  {
+    title: "AI Agent",
+    description: "Create intelligent autonomous agents.",
+    icon: Bot,
+  },
+  {
+    title: "Knowledge Base",
+    description: "Manage AI memory and documents.",
+    icon: Brain,
+  },
+  {
+    title: "Automation",
+    description: "Build workflows and automations.",
+    icon: Workflow,
+  },
+  {
+    title: "Database",
+    description: "Design and manage databases.",
+    icon: Database,
+  },
+  {
+    title: "Browse Web",
+    description: "Search the internet with AI.",
+    icon: Globe,
+  },
 ];
 
 export default function QuickActions() {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+    <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
 
-      <h2 className="mb-6 text-2xl font-black">
+      <div className="mb-8 flex items-center justify-between">
 
-        Quick Actions
+        <div>
 
-      </h2>
+          <h2 className="text-2xl font-black">
 
-      <div className="grid gap-4 md:grid-cols-3">
+            Quick Actions
 
-        {actions.map((item)=>(
+          </h2>
+
+          <p className="mt-2 text-muted-foreground">
+
+            Launch AI tools with one click.
+
+          </p>
+
+        </div>
+
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+
+        {actions.map((action) => (
           <button
-            key={item.title}
-            className="rounded-2xl border border-white/10 p-5 transition hover:bg-white/5"
+            key={action.title}
+            className="rounded-2xl border border-white/10 bg-background/40 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500 hover:bg-cyan-500/5"
           >
 
-            <item.icon className="mx-auto mb-3 h-7 w-7 text-cyan-400"/>
+            <action.icon className="mb-4 h-9 w-9 text-cyan-400" />
 
-            <div className="font-semibold">
+            <h3 className="text-lg font-bold">
 
-              {item.title}
+              {action.title}
 
-            </div>
+            </h3>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+
+              {action.description}
+
+            </p>
 
           </button>
         ))}
 
       </div>
 
-    </div>
+    </section>
   );
 }
