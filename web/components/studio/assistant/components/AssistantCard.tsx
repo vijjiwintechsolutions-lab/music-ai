@@ -1,40 +1,63 @@
 "use client";
 
-import { Bot, Brain, Cpu, CheckCircle } from "lucide-react";
+import { Bot, Brain, CheckCircle2, Cpu, Sparkles } from "lucide-react";
+
+const stats = [
+  {
+    icon: Brain,
+    label: "AI Model",
+    value: "GPT-5.5",
+  },
+  {
+    icon: Cpu,
+    label: "Response",
+    value: "< 1 sec",
+  },
+  {
+    icon: Sparkles,
+    label: "Accuracy",
+    value: "99.9%",
+  },
+];
 
 export default function AssistantCard() {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+    <section className="rounded-3xl border border-white/10 bg-white/5 p-8">
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
 
-          <div className="rounded-2xl bg-cyan-500/10 p-4">
+          <div className="rounded-3xl bg-cyan-500/10 p-5">
 
-            <Bot className="h-8 w-8 text-cyan-400" />
+            <Bot className="h-12 w-12 text-cyan-400" />
 
           </div>
 
           <div>
 
-            <h2 className="text-2xl font-black">
+            <h2 className="text-3xl font-black">
+
               Market AI Assistant
+
             </h2>
 
-            <p className="text-muted-foreground">
-              Enterprise AI Operating System
+            <p className="mt-2 text-muted-foreground">
+
+              Your intelligent AI workspace for coding, business,
+              research, automation and creativity.
+
             </p>
 
           </div>
 
         </div>
 
-        <div className="flex items-center gap-2 text-green-400">
+        <div className="inline-flex items-center gap-2 rounded-full bg-green-500/10 px-5 py-3 text-green-400">
 
-          <CheckCircle className="h-5 w-5" />
+          <CheckCircle2 className="h-5 w-5" />
 
-          Online
+          Assistant Online
 
         </div>
 
@@ -42,38 +65,31 @@ export default function AssistantCard() {
 
       <div className="mt-8 grid gap-4 md:grid-cols-3">
 
-        <div className="rounded-2xl border border-white/10 p-4">
+        {stats.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-2xl border border-white/10 p-5"
+          >
 
-          <Brain className="mb-3 h-6 w-6 text-cyan-400" />
+            <item.icon className="mb-3 h-7 w-7 text-cyan-400" />
 
-          <h3 className="font-bold">AI Model</h3>
+            <div className="text-2xl font-black">
 
-          <p className="text-muted-foreground">GPT-5.5</p>
+              {item.value}
 
-        </div>
+            </div>
 
-        <div className="rounded-2xl border border-white/10 p-4">
+            <p className="mt-2 text-muted-foreground">
 
-          <Cpu className="mb-3 h-6 w-6 text-cyan-400" />
+              {item.label}
 
-          <h3 className="font-bold">Response</h3>
+            </p>
 
-          <p className="text-muted-foreground">&lt; 1 Second</p>
-
-        </div>
-
-        <div className="rounded-2xl border border-white/10 p-4">
-
-          <Bot className="mb-3 h-6 w-6 text-cyan-400" />
-
-          <h3 className="font-bold">Status</h3>
-
-          <p className="text-green-400">Ready</p>
-
-        </div>
+          </div>
+        ))}
 
       </div>
 
-    </div>
+    </section>
   );
 }
