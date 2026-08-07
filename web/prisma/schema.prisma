@@ -1,0 +1,41 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  name          String?
+  credits       Int           @default(100)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  projects      Project[]
+  subscriptions Subscription?
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  title       String
+  type        String   // ఉదాహరణకు: "Code Studio", "Image Studio", మొదలైనవి
+  prompt      String
+  output      String?  @db.Text
+  status      String   @default("Completed") // Completed, Processing, Failed
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Subscription {
+  id         String    @id @default(uuid())
+  userId     String    @unique
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeId   String?   @unique
+  status     String    @default("active")
+  plan       String    @default("free")
+  expiresAt  DateTime?
+}
