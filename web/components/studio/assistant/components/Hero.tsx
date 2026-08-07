@@ -1,58 +1,38 @@
 "use client";
 
-import Hero from "./components/Hero";
-import Sidebar from "./components/Sidebar";
-import ChatPanel from "./components/ChatPanel";
-import QuickActions from "./components/QuickActions";
-import Stats from "./components/Stats";
-import RecentChats from "./components/RecentChats";
-import AssistantCard from "./components/AssistantCard";
-
-export default function AssistantStudio() {
-  return (
-    <div className="min-h-screen bg-background">
-
-      <div className="mx-auto max-w-7xl p-6 space-y-8">
-
-        <Hero />
-
-        <div className="grid gap-6 xl:grid-cols-4">
-
-          <Sidebar />
-
-          <div className="xl:col-span-3 space-y-6">
-
-            <AssistantCard />
-
-            <ChatPanel />
-
-            <QuickActions />
-
-            <RecentChats />
-
-            <Stats />
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-"use client";
-
 import {
-  Bot,
-  Sparkles,
-  Cpu,
-  Brain,
-  Zap,
   ArrowRight,
+  Bot,
+  Brain,
+  Cpu,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 export default function Hero() {
+  const cards = [
+    {
+      icon: Bot,
+      title: "AI Agents",
+      value: "150+",
+    },
+    {
+      icon: Brain,
+      title: "AI Models",
+      value: "60+",
+    },
+    {
+      icon: Cpu,
+      title: "Tool Integrations",
+      value: "500+",
+    },
+    {
+      icon: Zap,
+      title: "Daily Automations",
+      value: "Unlimited",
+    },
+  ];
+
   return (
     <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-600/15 via-blue-600/10 to-indigo-700/15 p-10">
 
@@ -80,10 +60,9 @@ export default function Hero() {
 
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
 
-            Market AI combines intelligent assistants, coding, image
-            generation, business automation, research, voice,
-            browser control and workflow orchestration into one
-            powerful workspace.
+            Market AI combines intelligent assistants, coding,
+            image generation, research, automation, business tools,
+            voice AI and workflow orchestration into one workspace.
 
           </p>
 
@@ -109,32 +88,12 @@ export default function Hero() {
 
         <div className="grid gap-5 sm:grid-cols-2">
 
-          {[
-            {
-              icon: Bot,
-              title: "AI Agents",
-              value: "150+",
-            },
-            {
-              icon: Brain,
-              title: "AI Models",
-              value: "60+",
-            },
-            {
-              icon: Cpu,
-              title: "Tool Integrations",
-              value: "500+",
-            },
-            {
-              icon: Zap,
-              title: "Daily Automations",
-              value: "Unlimited",
-            },
-          ].map((item) => (
+          {cards.map((item) => (
             <div
               key={item.title}
               className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
             >
+
               <item.icon className="mb-5 h-10 w-10 text-cyan-400" />
 
               <h3 className="text-3xl font-black">
@@ -148,6 +107,7 @@ export default function Hero() {
                 {item.title}
 
               </p>
+
             </div>
           ))}
 
