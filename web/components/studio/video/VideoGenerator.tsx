@@ -4,271 +4,1098 @@ import { useState } from "react";
 
 import {
   Video,
-  Sparkles,
+  Upload,
   Wand2,
-  Settings2,
-  Film,
-  ImageIcon,
+  Play,
 } from "lucide-react";
-
-const models = [
-  "Veo 3",
-  "Runway Gen-4",
-  "Pika 2.2",
-  "Luma Dream Machine",
-];
 
 const styles = [
   "Cinematic",
-  "Realistic",
   "Anime",
+  "Realistic",
   "3D",
-  "Pixar",
-  "Cyberpunk",
+  "Fantasy",
+  "Sci-Fi",
 ];
 
 export default function VideoGenerator() {
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState(models[0]);
   const [style, setStyle] = useState(styles[0]);
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-5xl font-black">
-          AI Video Generator
+          AI Video Studio
         </h1>
 
         <p className="mt-3 text-lg text-muted-foreground">
-          Generate professional AI videos from text or images.
+          Generate professional AI videos in minutes.
         </p>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-            <div className="mb-8 flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-r from-red-600 to-orange-500">
-                <Video className="h-8 w-8 text-white" />
-              </div>
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Text to Video
+          </h2>
 
-              <div>
-                <h2 className="text-2xl font-black">
-                  Video Prompt
-                </h2>
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe your video..."
+            className="min-h-[240px] w-full rounded-2xl border border-white/10 bg-background p-6 outline-none"
+          />
 
-                <p className="text-muted-foreground">
-                  Describe the video you want AI to create.
-                </p>
-              </div>
-            </div>
+          <div className="mt-6 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              <Wand2 className="mr-2 inline h-5 w-5" />
+              Generate Video
+            </button>
 
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Example: A cinematic drone shot flying through a futuristic city at sunset..."
-              className="min-h-[260px] w-full rounded-2xl border border-white/10 bg-background p-6 text-lg outline-none"
-            />
-          </div>
-        </div>
-
-        <div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-            <div className="mb-8 flex items-center gap-3">
-              <Settings2 className="h-7 w-7 text-red-500" />
-
-              <h2 className="text-2xl font-black">
-                Generation Settings
-              </h2>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="mb-3 block font-semibold">
-                  AI Model
-                </label>
-
-                <select
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-background p-4"
-                >
-                  {models.map((item) => (
-                    <option key={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-3 block font-semibold">
-                  Style
-                </label>
-
-                <select
-                  value={style}
-                  onChange={(e) => setStyle(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-background p-4"
-                >
-                  {styles.map((item) => (
-                    <option key={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-5 text-lg font-bold text-white">
-                <Sparkles className="h-6 w-6" />
-                Generate Video
-              </button>
-
-              <button className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-                <ImageIcon className="h-5 w-5" />
-                Image → Video
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Advanced Prompt
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Improve video generation quality.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Negative Prompt
-              </label>
-
-              <textarea
-                placeholder="blurry, watermark, low quality, distorted face..."
-                className="min-h-[140px] w-full rounded-2xl border border-white/10 bg-background p-5 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Prompt Strength
-              </label>
-
-              <input
-                type="range"
-                min={1}
-                max={100}
-                defaultValue={90}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Motion Intensity
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={70}
-                className="w-full"
-              />
-            </div>
-
-            <button className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 font-bold text-white">
-              <Wand2 className="h-5 w-5" />
-              Enhance Prompt
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              <Upload className="mr-2 inline h-5 w-5" />
+              Upload Image
             </button>
           </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Video Settings
-            </h2>
+          <h2 className="mb-6 text-2xl font-black">
+            Video Style
+          </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              Configure output quality.
+          <select
+            value={style}
+            onChange={(e) => setStyle(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-background p-4"
+          >
+            {styles.map((item) => (
+              <option key={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+
+          <div className="mt-8 rounded-2xl border border-white/10 p-8 text-center">
+            <Video className="mx-auto mb-4 h-16 w-16 text-red-500" />
+
+            <p className="font-semibold">
+              Ready to create
             </p>
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Duration
-              </label>
+          <button className="mt-8 w-full rounded-2xl border border-white/10 py-4 hover:bg-white/5">
+            <Play className="mr-2 inline h-5 w-5" />
+            Preview
+          </button>
+        </div>
+      </div>
 
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>5 Seconds</option>
-                <option>10 Seconds</option>
-                <option>15 Seconds</option>
-                <option>30 Seconds</option>
-                <option>60 Seconds</option>
-              </select>
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              Image to Video
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Animate photos into realistic cinematic videos.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border-2 border-dashed border-white/10 bg-background p-12 text-center">
+            <Upload className="mx-auto mb-6 h-16 w-16 text-red-500" />
+
+            <h3 className="text-xl font-bold">
+              Upload Image
+            </h3>
+
+            <p className="mt-3 text-muted-foreground">
+              PNG, JPG and WEBP supported.
+            </p>
+
+            <button className="mt-8 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Browse Image
+            </button>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Animate Image
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Motion Brush
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Auto Camera
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Duration
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "5 Seconds",
+              "10 Seconds",
+              "15 Seconds",
+              "30 Seconds",
+              "1 Minute",
+              "Custom",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Camera Controls
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Zoom In",
+              "Zoom Out",
+              "Pan Left",
+              "Pan Right",
+              "Orbit",
+              "Tilt",
+              "Dolly",
+              "Drone Shot",
+            ].map((camera) => (
+              <button
+                key={camera}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {camera}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Resolution
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "720p",
+              "1080p",
+              "2K",
+              "4K",
+              "8K",
+              "HDR",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              Character Consistency
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Keep the same character appearance across every scene.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border-2 border-dashed border-white/10 bg-background p-12 text-center">
+            <Upload className="mx-auto mb-6 h-16 w-16 text-red-500" />
+
+            <h3 className="text-xl font-bold">
+              Upload Character Reference
+            </h3>
+
+            <p className="mt-3 text-muted-foreground">
+              Upload one or multiple reference images.
+            </p>
+
+            <button className="mt-8 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Select Images
+            </button>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Lock Character
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Face Reference
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Costume Lock
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Character Settings
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Face Identity",
+              "Hair Style",
+              "Clothing",
+              "Accessories",
+              "Expressions",
+              "Body Shape",
+              "Age",
+              "Skin Tone",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Pose Control
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Standing",
+              "Walking",
+              "Running",
+              "Sitting",
+              "Jumping",
+              "Dancing",
+              "Fighting",
+              "Custom Pose",
+            ].map((pose) => (
+              <button
+                key={pose}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {pose}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Motion Paths
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Walk Forward",
+              "Walk Backward",
+              "Orbit Camera",
+              "Follow Subject",
+              "Circular Motion",
+              "Slow Motion",
+              "Fast Motion",
+              "Multi Character Scene",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              Face Swap & Lip Sync
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Replace faces, synchronize speech and create realistic AI actors.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border-2 border-dashed border-white/10 bg-background p-12 text-center">
+            <Upload className="mx-auto mb-6 h-16 w-16 text-red-500" />
+
+            <h3 className="text-xl font-bold">
+              Upload Source Media
+            </h3>
+
+            <p className="mt-3 text-muted-foreground">
+              Upload video, image or face reference.
+            </p>
+
+            <button className="mt-8 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Browse Files
+            </button>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Face Swap
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Lip Sync
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              AI Voice Over
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            AI Actors
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Male Actor",
+              "Female Actor",
+              "Child",
+              "Narrator",
+              "News Presenter",
+              "Teacher",
+              "Business Host",
+              "Custom Avatar",
+            ].map((actor) => (
+              <button
+                key={actor}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {actor}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Emotion Control
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Happy",
+              "Sad",
+              "Angry",
+              "Excited",
+              "Fear",
+              "Surprised",
+              "Confident",
+              "Neutral",
+            ].map((emotion) => (
+              <button
+                key={emotion}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {emotion}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Expression Editor
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Smile",
+              "Eye Contact",
+              "Blink",
+              "Eyebrows",
+              "Mouth Movement",
+              "Head Rotation",
+              "Hand Gestures",
+              "Auto Expressions",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              Timeline Editor
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Edit videos with multiple tracks, keyframes and cinematic transitions.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-background p-8">
+            <div className="space-y-4">
+              {[
+                "Video Track",
+                "Audio Track",
+                "Voice Over",
+                "Subtitles",
+                "Effects",
+              ].map((track) => (
+                <div
+                  key={track}
+                  className="flex items-center gap-4 rounded-xl border border-white/10 p-4"
+                >
+                  <div className="w-40 font-semibold">
+                    {track}
+                  </div>
+
+                  <div className="flex-1 rounded-lg bg-white/5 p-3">
+                    <div className="h-6 rounded bg-gradient-to-r from-red-600 to-orange-500" />
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
 
-            <div>
-              <label className="mb-3 block font-semibold">
-                Resolution
-              </label>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Add Track
+            </button>
 
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>720p</option>
-                <option>1080p</option>
-                <option>2K</option>
-                <option>4K</option>
-              </select>
-            </div>
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Split Clip
+            </button>
 
-            <div>
-              <label className="mb-3 block font-semibold">
-                Frame Rate
-              </label>
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Merge Clips
+            </button>
+          </div>
+        </div>
 
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>24 FPS</option>
-                <option>30 FPS</option>
-                <option>60 FPS</option>
-              </select>
-            </div>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Timeline Tools
+          </h2>
 
-            <div>
-              <label className="mb-3 block font-semibold">
-                Camera Motion
-              </label>
+          <div className="space-y-4">
+            {[
+              "Undo",
+              "Redo",
+              "Snap",
+              "Ripple Edit",
+              "Magnet",
+              "Markers",
+              "Zoom",
+              "Auto Save",
+            ].map((tool) => (
+              <button
+                key={tool}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {tool}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>Static</option>
-                <option>Pan</option>
-                <option>Zoom In</option>
-                <option>Zoom Out</option>
-                <option>Orbit</option>
-                <option>Drone</option>
-              </select>
-            </div>
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Scene Manager
+          </h2>
 
-            <div>
-              <label className="mb-3 block font-semibold">
-                Random Seed
-              </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Intro",
+              "Scene 1",
+              "Scene 2",
+              "Scene 3",
+              "Transition",
+              "Credits",
+              "Outro",
+              "Ending",
+            ].map((scene) => (
+              <button
+                key={scene}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {scene}
+              </button>
+            ))}
+          </div>
+        </div>
 
-              <input
-                type="number"
-                defaultValue={123456}
-                className="w-full rounded-xl border border-white/10 bg-background p-4 outline-none"
-              />
-            </div>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Transitions & Keyframes
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Fade",
+              "Dissolve",
+              "Slide",
+              "Zoom",
+              "Rotate",
+              "Motion Blur",
+              "Keyframe Editor",
+              "Animation Curves",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              AI Video Effects
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Enhance every scene with cinematic AI-powered visual effects.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              "Green Screen",
+              "Background Replace",
+              "Object Removal",
+              "Sky Replace",
+              "Color Grading",
+              "Depth Blur",
+              "Relighting",
+              "AI Upscale",
+            ].map((effect) => (
+              <button
+                key={effect}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {effect}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Apply Effects
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Preview Changes
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            AI Enhancements
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Sharpen",
+              "Denoise",
+              "HDR",
+              "Stabilize",
+              "Slow Motion",
+              "Frame Boost",
+              "Relight",
+              "Face Enhance",
+            ].map((tool) => (
+              <button
+                key={tool}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {tool}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Object Editing
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Remove Object",
+              "Replace Object",
+              "Expand Scene",
+              "Inpainting",
+              "Outpainting",
+              "Clone Object",
+              "Magic Eraser",
+              "Smart Fill",
+            ].map((item) => (
+              <button
+                key={item}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Style Transfer
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Anime",
+              "Pixar",
+              "Watercolor",
+              "Oil Painting",
+              "Cyberpunk",
+              "Sketch",
+              "Comic Book",
+              "Photorealistic",
+            ].map((styleItem) => (
+              <button
+                key={styleItem}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {styleItem}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              AI Audio Studio
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Create professional audio for every video automatically.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              "Background Music",
+              "Voice Over",
+              "Sound Effects",
+              "Ambient Audio",
+              "Noise Removal",
+              "Auto Sync",
+              "AI Dubbing",
+              "Audio Cleanup",
+            ].map((tool) => (
+              <button
+                key={tool}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {tool}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Generate Audio
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Auto Mix
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Preview Audio
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Voice Options
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Male",
+              "Female",
+              "Child",
+              "Narrator",
+              "News",
+              "Podcast",
+              "Celebrity Style",
+              "Custom Voice",
+            ].map((voice) => (
+              <button
+                key={voice}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {voice}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Audio Mixer
+          </h2>
+
+          <div className="space-y-5">
+            {[
+              "Master Volume",
+              "Voice",
+              "Music",
+              "Effects",
+              "Ambience",
+              "Bass",
+              "Treble",
+              "Stereo Width",
+            ].map((channel) => (
+              <div
+                key={channel}
+                className="rounded-2xl border border-white/10 p-5"
+              >
+                <div className="mb-3 flex justify-between">
+                  <span>{channel}</span>
+
+                  <span className="font-bold text-red-500">
+                    80%
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  defaultValue="80"
+                  className="w-full"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            AI Processing
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Noise Suppression",
+              "Echo Cancellation",
+              "Auto Leveling",
+              "Speech Enhancement",
+              "Background Isolation",
+              "Music Ducking",
+              "Lip Sync Alignment",
+              "Final Audio Master",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              AI Subtitle Studio
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Automatically generate subtitles, captions and multilingual translations.
+            </p>
+          </div>
+
+          <textarea
+            placeholder="Paste transcript or upload a video..."
+            className="min-h-[220px] w-full rounded-2xl border border-white/10 bg-background p-6 outline-none"
+          />
+
+          <div className="mt-6 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Generate Captions
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Auto Translate
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              AI Dubbing
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Languages
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "English",
+              "తెలుగు",
+              "Hindi",
+              "Tamil",
+              "Kannada",
+              "Spanish",
+              "French",
+              "Japanese",
+            ].map((language) => (
+              <button
+                key={language}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {language}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Caption Styles
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Modern",
+              "YouTube",
+              "Netflix",
+              "Minimal",
+              "Bold",
+              "Animated",
+              "Karaoke",
+              "Custom",
+            ].map((styleItem) => (
+              <button
+                key={styleItem}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {styleItem}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Text Animation
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Fade In",
+              "Slide Up",
+              "Zoom",
+              "Bounce",
+              "Typewriter",
+              "Glow",
+              "Neon",
+              "Motion Tracking",
+            ].map((animation) => (
+              <button
+                key={animation}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {animation}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              AI Avatar Studio
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Create realistic talking avatars and virtual presenters.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border-2 border-dashed border-white/10 bg-background p-12 text-center">
+            <Upload className="mx-auto mb-6 h-16 w-16 text-red-500" />
+
+            <h3 className="text-xl font-bold">
+              Upload Avatar Reference
+            </h3>
+
+            <p className="mt-3 text-muted-foreground">
+              Upload a face image or create an AI avatar.
+            </p>
+
+            <button className="mt-8 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Select Image
+            </button>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Generate Avatar
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Talking Avatar
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Presenter Mode
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Avatar Library
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Business Presenter",
+              "Teacher",
+              "News Anchor",
+              "Doctor",
+              "Sales Expert",
+              "Coach",
+              "Influencer",
+              "Custom Avatar",
+            ].map((avatar) => (
+              <button
+                key={avatar}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {avatar}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Gesture Controls
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Wave",
+              "Point",
+              "Smile",
+              "Hand Raise",
+              "Walking",
+              "Eye Contact",
+              "Head Movement",
+              "Custom Motion",
+            ].map((gesture) => (
+              <button
+                key={gesture}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {gesture}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Voice & Animation
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "AI Voice",
+              "Lip Sync",
+              "Emotion Control",
+              "Head Tracking",
+              "Body Animation",
+              "Eye Tracking",
+              "Background Scene",
+              "Export Avatar",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -278,165 +1105,68 @@ export default function VideoGenerator() {
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-black">
-                Video Preview
+                Video Library
               </h2>
 
               <p className="mt-2 text-muted-foreground">
-                Preview your generated AI videos.
+                Organize all your AI-generated videos and projects.
               </p>
             </div>
 
-            <Film className="h-8 w-8 text-red-500" />
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            {[1, 2, 3, 4].map((item) => (
-              <div
-                key={item}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-background"
-              >
-                <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-red-600/20 to-orange-500/20">
-                  <Video className="h-20 w-20 text-red-400" />
-                </div>
-
-                <div className="space-y-4 p-5">
-                  <div>
-                    <h3 className="font-bold">
-                      Video {item}
-                    </h3>
-
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      1920 × 1080 • 10s
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button className="rounded-xl bg-gradient-to-r from-red-600 to-orange-500 py-3 font-semibold text-white">
-                      Preview
-                    </button>
-
-                    <button className="rounded-xl border border-white/10 py-3 font-semibold hover:bg-white/5">
-                      Download
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Render Progress
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              AI rendering status.
-            </p>
-          </div>
-
-          <div className="space-y-8">
-            <div>
-              <div className="mb-3 flex justify-between">
-                <span>Prompt Analysis</span>
-                <span>100%</span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-full rounded-full bg-green-500" />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-3 flex justify-between">
-                <span>Scene Planning</span>
-                <span>100%</span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-full rounded-full bg-green-500" />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-3 flex justify-between">
-                <span>Frame Rendering</span>
-                <span>74%</span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[74%] rounded-full bg-gradient-to-r from-red-600 to-orange-500" />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-3 flex justify-between">
-                <span>Video Encoding</span>
-                <span>38%</span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[38%] rounded-full bg-gradient-to-r from-red-600 to-orange-500" />
-              </div>
-            </div>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Render Again
-            </button>
-
-            <button className="w-full rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 font-bold text-white">
-              Export MP4
-            </button>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Export WebM
-            </button>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Export GIF
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-6 py-3 font-bold text-white">
+              New Project
             </button>
           </div>
-        </div>
-      </div>
 
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              AI Scene Builder
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Create multiple scenes for your video.
-            </p>
-          </div>
-
-          <div className="space-y-5">
+          <div className="space-y-4">
             {[
-              "Opening Scene",
-              "Main Scene",
-              "Action Scene",
-              "Transition",
-              "Ending Scene",
-            ].map((scene, index) => (
+              {
+                title: "Product Commercial",
+                duration: "00:45",
+                quality: "4K",
+              },
+              {
+                title: "AI Presenter",
+                duration: "03:20",
+                quality: "1080p",
+              },
+              {
+                title: "Travel Reel",
+                duration: "00:58",
+                quality: "4K",
+              },
+              {
+                title: "Movie Trailer",
+                duration: "02:15",
+                quality: "8K",
+              },
+              {
+                title: "Marketing Ad",
+                duration: "01:10",
+                quality: "4K",
+              },
+            ].map((video) => (
               <div
-                key={scene}
-                className="rounded-2xl border border-white/10 p-5"
+                key={video.title}
+                className="flex items-center justify-between rounded-2xl border border-white/10 p-5"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold">
-                      Scene {index + 1}
-                    </h3>
+                <div>
+                  <h3 className="font-bold">
+                    {video.title}
+                  </h3>
 
-                    <p className="text-sm text-muted-foreground">
-                      {scene}
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {video.duration} • {video.quality}
+                  </p>
+                </div>
 
-                  <button className="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">
-                    Edit
+                <div className="flex gap-3">
+                  <button className="rounded-xl border border-white/10 p-3 hover:bg-white/5">
+                    <Play className="h-5 w-5" />
+                  </button>
+
+                  <button className="rounded-xl border border-white/10 p-3 hover:bg-white/5">
+                    <Upload className="h-5 w-5" />
                   </button>
                 </div>
               </div>
@@ -445,794 +1175,161 @@ export default function VideoGenerator() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Character Controls
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Configure AI actors and animation.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Character Count
-              </label>
-
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Emotion
-              </label>
-
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>Neutral</option>
-                <option>Happy</option>
-                <option>Sad</option>
-                <option>Angry</option>
-                <option>Excited</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Walking Speed
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={55}
-                className="w-full"
-              />
-            </div>
-
-            <button className="w-full rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 font-bold text-white">
-              Apply Character Settings
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black">
-            Camera Path Editor
+          <h2 className="mb-8 text-2xl font-black">
+            Favorites
           </h2>
-
-          <p className="mt-2 text-muted-foreground">
-            Customize cinematic camera movements.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            "Static",
-            "Pan Left",
-            "Pan Right",
-            "Tilt Up",
-            "Tilt Down",
-            "Orbit",
-            "Crane",
-            "Drone",
-            "Handheld",
-          ].map((item) => (
-            <button
-              key={item}
-              className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black">
-            Animation Timeline
-          </h2>
-
-          <p className="mt-2 text-muted-foreground">
-            Timeline overview for generated scenes.
-          </p>
-        </div>
-
-        <div className="space-y-5">
-          {[
-            "0s - Intro",
-            "3s - Camera Zoom",
-            "6s - Character Motion",
-            "9s - Final Transition",
-          ].map((item) => (
-            <div
-              key={item}
-              className="rounded-2xl border border-white/10 p-5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">
-                  {item}
-                </span>
-
-                <button className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5">
-                  Edit
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              AI Voice & Lip Sync
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Synchronize speech with animated characters.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Voice Model
-              </label>
-
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>Male Professional</option>
-                <option>Female Professional</option>
-                <option>Young Male</option>
-                <option>Young Female</option>
-                <option>Custom Voice Clone</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Lip Sync Accuracy
-              </label>
-
-              <input
-                type="range"
-                min={50}
-                max={100}
-                defaultValue={95}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Speech Speed
-              </label>
-
-              <input
-                type="range"
-                min={50}
-                max={150}
-                defaultValue={100}
-                className="w-full"
-              />
-            </div>
-
-            <button className="w-full rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 font-bold text-white">
-              Apply Voice Sync
-            </button>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Audio Mixer
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Mix narration, music and sound effects.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Narration Volume
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={90}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Background Music
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={45}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Sound Effects
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={60}
-                className="w-full"
-              />
-            </div>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Upload Background Music
-            </button>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Upload Voice Over
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black">
-            Sound Effects Library
-          </h2>
-
-          <p className="mt-2 text-muted-foreground">
-            One-click cinematic audio effects.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {[
-            "Explosion",
-            "Rain",
-            "Thunder",
-            "Wind",
-            "Ocean",
-            "Fire",
-            "Footsteps",
-            "Crowd",
-            "Birds",
-            "Drone",
-            "Car Engine",
-            "Magic",
-          ].map((effect) => (
-            <button
-              key={effect}
-              className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
-            >
-              {effect}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              AI Effects
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Enhance your videos with AI effects.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {[
-              "Cinematic Glow",
-              "HDR",
-              "Bloom",
-              "Lens Flare",
-              "Depth of Field",
-              "Night Vision",
-              "Fire",
-              "Snow",
-              "Rain",
-              "Lightning",
-            ].map((effect) => (
-              <button
-                key={effect}
-                className="rounded-xl border border-white/10 py-3 font-semibold transition hover:border-red-500 hover:bg-white/5"
-              >
-                {effect}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Video Transitions
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Smooth transitions between scenes.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {[
-              "Fade",
-              "Cross Dissolve",
-              "Zoom",
-              "Slide",
-              "Swipe",
-              "Blur",
-              "Flash",
-              "Rotate",
-              "Glitch",
-              "Film Burn",
-            ].map((transition) => (
-              <button
-                key={transition}
-                className="rounded-xl border border-white/10 py-3 font-semibold transition hover:border-red-500 hover:bg-white/5"
-              >
-                {transition}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Color Grading
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Professional cinematic color presets.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Brightness
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={50}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Contrast
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={55}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Saturation
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={60}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Motion Blur
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={35}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Stabilization
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={80}
-                className="w-full"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              AI Avatar Studio
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Create consistent AI characters.
-            </p>
-          </div>
-
-          <div className="grid gap-4">
-            {[
-              "Male Avatar",
-              "Female Avatar",
-              "Anime Character",
-              "Business Person",
-              "Fantasy Hero",
-              "Custom Avatar",
-            ].map((avatar) => (
-              <button
-                key={avatar}
-                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
-              >
-                {avatar}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Character Consistency
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Keep appearance identical across scenes.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Consistency Level
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={96}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Face Accuracy
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={98}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Clothing Consistency
-              </label>
-
-              <input
-                type="range"
-                min={0}
-                max={100}
-                defaultValue={95}
-                className="w-full"
-              />
-            </div>
-
-            <button className="w-full rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 font-bold text-white">
-              Lock Character
-            </button>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Facial Expressions
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              AI emotion presets.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {[
-              "Happy",
-              "Sad",
-              "Angry",
-              "Fear",
-              "Excited",
-              "Calm",
-              "Thinking",
-              "Confident",
-              "Surprised",
-              "Serious",
-            ].map((emotion) => (
-              <button
-                key={emotion}
-                className="rounded-xl border border-white/10 py-3 font-semibold transition hover:border-red-500 hover:bg-white/5"
-              >
-                {emotion}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black">
-            Motion Presets
-          </h2>
-
-          <p className="mt-2 text-muted-foreground">
-            Apply cinematic movement with one click.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {[
-            "Walk",
-            "Run",
-            "Jump",
-            "Dance",
-            "Wave",
-            "Talk",
-            "Sit",
-            "Stand",
-            "Fight",
-            "Fly",
-            "Drive",
-            "Slow Motion",
-          ].map((motion) => (
-            <button
-              key={motion}
-              className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
-            >
-              {motion}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              AI Assets Library
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Reusable AI-generated assets.
-            </p>
-          </div>
 
           <div className="space-y-4">
             {[
-              "Characters",
-              "Vehicles",
-              "Buildings",
-              "Animals",
-              "Nature",
-              "Weapons",
-              "Furniture",
-              "Logos",
+              "Commercial Ads",
+              "YouTube Videos",
+              "Instagram Reels",
+              "TikTok",
+              "Product Demo",
+              "Presentation",
+              "AI Avatar",
+              "Animations",
             ].map((item) => (
               <button
                 key={item}
-                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+                className="w-full rounded-xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
               >
                 {item}
               </button>
             ))}
           </div>
         </div>
+      </div>
 
+      <div className="grid gap-8 xl:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Environment Presets
-            </h2>
+          <h2 className="mb-8 text-2xl font-black">
+            AI Templates
+          </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              One-click cinematic worlds.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {[
-              "Cyberpunk",
-              "Space",
-              "Desert",
-              "Forest",
-              "Beach",
-              "Snow",
-              "City",
-              "Village",
-              "Mountains",
-              "Studio",
-            ].map((env) => (
-              <button
-                key={env}
-                className="rounded-xl border border-white/10 py-3 font-semibold transition hover:border-red-500 hover:bg-white/5"
-              >
-                {env}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Video Templates
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Ready-to-use project layouts.
-            </p>
-          </div>
-
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
             {[
               "YouTube Intro",
               "Instagram Reel",
-              "Short Film",
-              "Advertisement",
-              "Product Demo",
-              "Music Video",
-              "Explainer",
-              "Documentary",
+              "TikTok Short",
+              "Product Ad",
+              "Podcast Video",
+              "Tutorial",
+              "Presentation",
+              "Movie Trailer",
             ].map((template) => (
               <button
                 key={template}
-                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
               >
                 {template}
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black">
-            Scene Collections
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Cloud Storage
           </h2>
 
-          <p className="mt-2 text-muted-foreground">
-            Frequently used cinematic scenes.
-          </p>
-        </div>
+          <div className="space-y-5">
+            {[
+              ["Storage Used", "128 GB"],
+              ["Available", "872 GB"],
+              ["Projects", "542"],
+              ["Exports", "1,284"],
+              ["Shared Files", "63"],
+            ].map((item) => (
+              <div
+                key={item[0]}
+                className="flex items-center justify-between rounded-2xl border border-white/10 p-5"
+              >
+                <span>
+                  {item[0]}
+                </span>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            "City Chase",
-            "Romantic Sunset",
-            "Battle Scene",
-            "Product Showcase",
-            "Space Journey",
-            "Forest Adventure",
-            "Ocean Waves",
-            "Luxury Interior",
-          ].map((scene) => (
-            <button
-              key={scene}
-              className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
-            >
-              {scene}
-            </button>
-          ))}
+                <span className="font-bold text-red-500">
+                  {item[1]}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-black">
-              Render Queue
+              Video Analytics
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Current AI rendering jobs.
+              Track audience engagement and overall video performance.
             </p>
           </div>
 
-          <div className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-4">
+            {[
+              ["Views", "8.4M"],
+              ["Watch Time", "512K hrs"],
+              ["Subscribers", "124K"],
+              ["Revenue", "₹9.8L"],
+            ].map((item) => (
+              <div
+                key={item[0]}
+                className="rounded-2xl border border-white/10 p-6 text-center"
+              >
+                <h3 className="text-3xl font-black text-red-500">
+                  {item[1]}
+                </h3>
+
+                <p className="mt-2 text-muted-foreground">
+                  {item[0]}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 space-y-5">
             {[
               {
-                title: "YouTube Intro",
-                progress: 92,
+                title: "Audience Retention",
+                value: "92%",
               },
               {
-                title: "Product Ad",
-                progress: 71,
+                title: "Engagement Rate",
+                value: "88%",
               },
               {
-                title: "Music Video",
-                progress: 43,
+                title: "Completion Rate",
+                value: "81%",
               },
               {
-                title: "Short Film",
-                progress: 18,
+                title: "CTR",
+                value: "14%",
               },
-            ].map((job) => (
+            ].map((item) => (
               <div
-                key={job.title}
+                key={item.title}
                 className="rounded-2xl border border-white/10 p-5"
               >
-                <div className="mb-3 flex justify-between">
-                  <span className="font-semibold">
-                    {job.title}
+                <div className="mb-2 flex justify-between">
+                  <span>
+                    {item.title}
                   </span>
 
-                  <span>
-                    {job.progress}%
+                  <span className="font-bold text-red-500">
+                    {item.value}
                   </span>
                 </div>
 
-                <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                <div className="h-3 rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-red-600 to-orange-500"
+                    className="h-3 rounded-full bg-gradient-to-r from-red-600 to-orange-500"
                     style={{
-                      width: `${job.progress}%`,
+                      width: item.value,
                     }}
                   />
                 </div>
@@ -1242,495 +1339,303 @@ export default function VideoGenerator() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              GPU Status
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Rendering resources.
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-green-500">
-                87%
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                GPU Usage
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-cyan-400">
-                24 GB
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                VRAM Available
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-orange-400">
-                Online
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Render Engine
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Performance
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Rendering analytics.
-            </p>
-          </div>
+          <h2 className="mb-8 text-2xl font-black">
+            Top Platforms
+          </h2>
 
           <div className="space-y-4">
-            <div className="flex justify-between rounded-xl border border-white/10 p-4">
-              <span>Average Render Time</span>
-
-              <span className="font-bold">
-                2m 18s
-              </span>
-            </div>
-
-            <div className="flex justify-between rounded-xl border border-white/10 p-4">
-              <span>Completed Today</span>
-
-              <span className="font-bold">
-                42
-              </span>
-            </div>
-
-            <div className="flex justify-between rounded-xl border border-white/10 p-4">
-              <span>Success Rate</span>
-
-              <span className="font-bold text-green-500">
-                99.2%
-              </span>
-            </div>
-
-            <div className="flex justify-between rounded-xl border border-white/10 p-4">
-              <span>Queue Length</span>
-
-              <span className="font-bold">
-                4 Jobs
-              </span>
-            </div>
+            {[
+              "YouTube",
+              "Instagram",
+              "TikTok",
+              "Facebook",
+              "LinkedIn",
+              "X",
+              "Vimeo",
+              "Website",
+            ].map((platform) => (
+              <button
+                key={platform}
+                className="w-full rounded-xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {platform}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black">
-            Processing Timeline
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Audience Insights
           </h2>
 
-          <p className="mt-2 text-muted-foreground">
-            Latest rendering activities.
-          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Age Groups",
+              "Gender",
+              "Top Countries",
+              "Top Cities",
+              "Devices",
+              "Languages",
+              "Traffic Sources",
+              "Returning Viewers",
+            ].map((item) => (
+              <button
+                key={item}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {[
-            "Prompt received",
-            "Storyboard created",
-            "Frames generated",
-            "Effects applied",
-            "Video encoded",
-            "Export completed",
-          ].map((step, index) => (
-            <div
-              key={step}
-              className="flex items-center gap-4 rounded-2xl border border-white/10 p-4"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-red-600 to-orange-500 font-bold text-white">
-                {index + 1}
-              </div>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Export Statistics
+          </h2>
 
-              <span>{step}</span>
-            </div>
-          ))}
+          <div className="space-y-4">
+            {[
+              "Total Exports",
+              "4K Videos",
+              "8K Videos",
+              "Cloud Renders",
+              "Downloads",
+              "Shared Projects",
+              "Processing Time",
+              "Storage Usage",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-black">
-              AI Analytics
+              AI Collaboration
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Video generation quality metrics.
+              Collaborate with editors, designers and creators in real time.
             </p>
           </div>
 
-          <div className="space-y-5">
-            <div className="rounded-2xl border border-white/10 p-5">
-              <div className="mb-2 flex justify-between">
-                <span>Scene Accuracy</span>
+          <div className="space-y-4">
+            {[
+              {
+                title: "Product Launch Campaign",
+                members: "12 Members",
+              },
+              {
+                title: "YouTube Documentary",
+                members: "6 Members",
+              },
+              {
+                title: "Social Media Ads",
+                members: "8 Members",
+              },
+              {
+                title: "Course Production",
+                members: "10 Members",
+              },
+            ].map((project) => (
+              <div
+                key={project.title}
+                className="flex items-center justify-between rounded-2xl border border-white/10 p-5"
+              >
+                <div>
+                  <h3 className="font-bold">
+                    {project.title}
+                  </h3>
 
-                <span className="font-bold text-green-500">
-                  98%
-                </span>
+                  <p className="text-sm text-muted-foreground">
+                    {project.members}
+                  </p>
+                </div>
+
+                <button className="rounded-xl border border-white/10 px-5 py-2 hover:bg-white/5">
+                  Open
+                </button>
               </div>
+            ))}
+          </div>
 
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[98%] rounded-full bg-green-500" />
-              </div>
-            </div>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Create Team
+            </button>
 
-            <div className="rounded-2xl border border-white/10 p-5">
-              <div className="mb-2 flex justify-between">
-                <span>Motion Quality</span>
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Invite Members
+            </button>
 
-                <span className="font-bold text-cyan-400">
-                  96%
-                </span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[96%] rounded-full bg-cyan-500" />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-5">
-              <div className="mb-2 flex justify-between">
-                <span>Lighting</span>
-
-                <span className="font-bold text-orange-400">
-                  95%
-                </span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[95%] rounded-full bg-orange-500" />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-5">
-              <div className="mb-2 flex justify-between">
-                <span>Character Consistency</span>
-
-                <span className="font-bold text-red-500">
-                  97%
-                </span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[97%] rounded-full bg-red-500" />
-              </div>
-            </div>
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Share Project
+            </button>
           </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Usage Statistics
-            </h2>
+          <h2 className="mb-8 text-2xl font-black">
+            Team Roles
+          </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              Overall rendering usage.
-            </p>
+          <div className="space-y-4">
+            {[
+              "Administrator",
+              "Editor",
+              "Reviewer",
+              "Animator",
+              "Designer",
+              "Voice Artist",
+              "Client",
+              "Viewer",
+            ].map((role) => (
+              <button
+                key={role}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {role}
+              </button>
+            ))}
           </div>
-
-          <div className="grid grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                318
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Videos
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                126h
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Render Time
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                3.8TB
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Storage
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                91
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Projects
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Quality Score
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              AI evaluation summary.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="rounded-2xl bg-green-500/10 p-6 text-center">
-              <h3 className="text-6xl font-black text-green-500">
-                A+
-              </h3>
-
-              <p className="mt-3">
-                Professional Quality
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-red-500/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-red-500">
-                99.1%
-              </h3>
-
-              <p className="mt-3">
-                Success Rate
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-cyan-500/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-cyan-400">
-                4.8★
-              </h3>
-
-              <p className="mt-3">
-                User Rating
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-black">
-              Recent Projects
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Recently exported AI videos.
-            </p>
-          </div>
-
-          <Film className="h-7 w-7 text-red-500" />
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10 text-left">
-                <th className="pb-4">Project</th>
-                <th className="pb-4">Model</th>
-                <th className="pb-4">Duration</th>
-                <th className="pb-4">Status</th>
-                <th className="pb-4">Created</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {[
-                ["Product Ad", "Veo 3", "15s", "Completed", "Today"],
-                ["YouTube Intro", "Runway", "10s", "Completed", "Today"],
-                ["Travel Reel", "Pika", "30s", "Completed", "Yesterday"],
-                ["Short Film", "Luma", "60s", "Completed", "Yesterday"],
-              ].map((item) => (
-                <tr
-                  key={item[0]}
-                  className="border-b border-white/5"
-                >
-                  <td className="py-5 font-semibold">{item[0]}</td>
-                  <td>{item[1]}</td>
-                  <td>{item[2]}</td>
-                  <td>
-                    <span className="rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-500">
-                      {item[3]}
-                    </span>
-                  </td>
-                  <td className="text-muted-foreground">
-                    {item[4]}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              AI Prompt Library
-            </h2>
+          <h2 className="mb-8 text-2xl font-black">
+            Review Workflow
+          </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              Professional prompts for every type of video.
-            </p>
-          </div>
-
-          <div className="grid gap-4">
+          <div className="space-y-4">
             {[
-              "Commercial Advertisement",
-              "Movie Trailer",
-              "Music Video",
-              "YouTube Intro",
-              "Instagram Reel",
-              "Travel Cinematic",
-              "Product Showcase",
-              "Documentary",
-              "Gaming Montage",
-              "Educational Video",
-            ].map((promptItem) => (
+              "Pending Review",
+              "Approved",
+              "Needs Changes",
+              "Client Feedback",
+              "Final Review",
+              "Ready to Export",
+              "Published",
+              "Archived",
+            ].map((status) => (
               <button
-                key={promptItem}
-                className="rounded-2xl border border-white/10 p-5 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+                key={status}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
               >
-                {promptItem}
+                {status}
               </button>
             ))}
           </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Storyboard Generator
-            </h2>
+          <h2 className="mb-8 text-2xl font-black">
+            Comments & Version History
+          </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              Automatically create cinematic storyboards.
-            </p>
-          </div>
-
-          <div className="space-y-5">
+          <div className="space-y-4">
             {[
-              "Opening Scene",
-              "Character Introduction",
-              "Main Action",
-              "Climax",
-              "Final Scene",
-            ].map((scene, index) => (
+              "Initial Draft",
+              "Client Review",
+              "Animation Updated",
+              "Audio Improved",
+              "Color Corrected",
+              "Subtitle Added",
+              "Final Export",
+              "Published Version",
+            ].map((version) => (
               <div
-                key={scene}
+                key={version}
                 className="rounded-2xl border border-white/10 p-5"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold">
-                      Scene {index + 1}
-                    </h3>
-
-                    <p className="text-sm text-muted-foreground">
-                      {scene}
-                    </p>
-                  </div>
-
-                  <button className="rounded-xl border border-white/10 px-4 py-2 hover:bg-white/5">
-                    View
-                  </button>
-                </div>
+                {version}
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-black">
-              Shot List
+              AI Asset Library
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Automatically generated camera shots.
+              Access millions of videos, images, icons, audio and templates.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
             {[
-              "Wide Establishing Shot",
-              "Medium Shot",
-              "Close Up",
-              "Over The Shoulder",
-              "Drone Shot",
-              "Tracking Shot",
-              "Slow Motion",
-              "Final Hero Shot",
-            ].map((shot) => (
+              "Stock Videos",
+              "Stock Photos",
+              "Icons",
+              "Illustrations",
+              "3D Models",
+              "Music",
+              "Sound Effects",
+              "Transitions",
+              "Animations",
+            ].map((asset) => (
               <button
-                key={shot}
-                className="w-full rounded-2xl border border-white/10 p-4 text-left transition hover:border-red-500 hover:bg-white/5"
+                key={asset}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
               >
-                {shot}
+                {asset}
               </button>
             ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Browse Assets
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Upload Asset
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              AI Search
+            </button>
           </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Director Mode
-            </h2>
+          <h2 className="mb-8 text-2xl font-black">
+            Brand Kit
+          </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              Cinematic direction presets.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             {[
-              "Hollywood",
-              "Netflix",
-              "Marvel",
-              "Pixar",
-              "Anime",
-              "Documentary",
-              "Commercial",
-              "Music Video",
-            ].map((mode) => (
+              "Logo",
+              "Fonts",
+              "Brand Colors",
+              "Watermark",
+              "Intro",
+              "Outro",
+              "Lower Thirds",
+              "Brand Templates",
+            ].map((item) => (
               <button
-                key={mode}
-                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+                key={item}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
               >
-                {mode}
+                {item}
               </button>
             ))}
           </div>
@@ -1739,30 +1644,24 @@ export default function VideoGenerator() {
 
       <div className="grid gap-8 xl:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Community Templates
-            </h2>
+          <h2 className="mb-8 text-2xl font-black">
+            Template Library
+          </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              Popular templates shared by creators.
-            </p>
-          </div>
-
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
             {[
-              "YouTube Intro Pack",
-              "Product Launch Ad",
-              "Instagram Reel",
-              "Travel Vlog",
-              "Movie Trailer",
-              "Gaming Intro",
-              "Business Presentation",
-              "Promo Video",
+              "YouTube",
+              "Instagram",
+              "TikTok",
+              "Facebook",
+              "LinkedIn",
+              "Presentation",
+              "Product Demo",
+              "Documentary",
             ].map((template) => (
               <button
                 key={template}
-                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
               >
                 {template}
               </button>
@@ -1771,306 +1670,126 @@ export default function VideoGenerator() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Favorite Projects
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Quick access to saved projects.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {[
-              "Luxury Car Ad",
-              "Travel Cinematic",
-              "AI Short Film",
-              "Fashion Promo",
-              "Nature Documentary",
-              "Product Demo",
-            ].map((project) => (
-              <button
-                key={project}
-                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
-              >
-                {project}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              AI Assistant
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Smart recommendations for better videos.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {[
-              "Improve camera movement",
-              "Increase lighting quality",
-              "Add cinematic transitions",
-              "Enhance character consistency",
-              "Optimize rendering settings",
-              "Reduce render time",
-            ].map((tip) => (
-              <div
-                key={tip}
-                className="rounded-2xl border border-white/10 p-4"
-              >
-                {tip}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Keyboard Shortcuts
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Speed up your workflow.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {[
-              ["Ctrl + Enter", "Generate Video"],
-              ["Ctrl + S", "Save Project"],
-              ["Ctrl + E", "Export Video"],
-              ["Ctrl + R", "Render Again"],
-              ["Ctrl + P", "Preview"],
-              ["Ctrl + /", "Open AI Assistant"],
-            ].map(([key, action]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between rounded-xl border border-white/10 p-4"
-              >
-                <kbd className="rounded-lg bg-black/30 px-3 py-2 text-sm font-bold">
-                  {key}
-                </kbd>
-
-                <span className="text-muted-foreground">
-                  {action}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black">
-            Recent Activity
+          <h2 className="mb-8 text-2xl font-black">
+            Asset Statistics
           </h2>
 
-          <p className="mt-2 text-muted-foreground">
-            Latest actions performed in Video Studio.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {[
-            "Video prompt created",
-            "Storyboard generated",
-            "Render completed",
-            "Audio synchronized",
-            "Video exported",
-            "Project saved",
-          ].map((activity, index) => (
-            <div
-              key={activity}
-              className="flex items-center gap-4 rounded-2xl border border-white/10 p-4"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-red-600 to-orange-500 font-bold text-white">
-                {index + 1}
-              </div>
-
-              <span>{activity}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Export Manager
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Export videos in multiple formats.
-            </p>
-          </div>
-
           <div className="space-y-5">
             {[
-              "MP4 (H.264)",
-              "MP4 (H.265)",
-              "MOV",
-              "WebM",
-              "GIF",
-              "AVI",
-              "MKV",
-              "Image Sequence",
+              ["Stock Videos", "2.8M+"],
+              ["Images", "12M+"],
+              ["Icons", "450K+"],
+              ["Music Tracks", "210K+"],
+              ["Templates", "18K+"],
+              ["Animations", "96K+"],
             ].map((item) => (
-              <button
-                key={item}
-                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              <div
+                key={item[0]}
+                className="flex items-center justify-between rounded-2xl border border-white/10 p-5"
               >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Cloud Rendering
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Distributed AI rendering status.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="mb-3 block font-semibold">
-                Render Nodes
-              </label>
-
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>Auto</option>
-                <option>2 GPUs</option>
-                <option>4 GPUs</option>
-                <option>8 GPUs</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Priority
-              </label>
-
-              <select className="w-full rounded-xl border border-white/10 bg-background p-4">
-                <option>Normal</option>
-                <option>High</option>
-                <option>Ultra</option>
-              </select>
-            </div>
-
-            <button className="w-full rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 font-bold text-white">
-              Start Cloud Render
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Version History
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Saved project versions.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {[
-              "Version 1.0",
-              "Version 1.1",
-              "Version 2.0",
-              "Version 2.1",
-              "Latest Draft",
-            ].map((version) => (
-              <button
-                key={version}
-                className="flex w-full items-center justify-between rounded-2xl border border-white/10 p-4 transition hover:border-red-500 hover:bg-white/5"
-              >
-                <span>{version}</span>
-
-                <span className="text-sm text-muted-foreground">
-                  Restore
+                <span>
+                  {item[0]}
                 </span>
-              </button>
+
+                <span className="font-bold text-red-500">
+                  {item[1]}
+                </span>
+              </div>
             ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Collaboration
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Share projects with your team.
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Invite Members
-            </button>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Share Link
-            </button>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Export Project
-            </button>
-
-            <button className="w-full rounded-2xl border border-white/10 py-4 font-semibold hover:bg-white/5">
-              Import Project
-            </button>
-
-            <button className="w-full rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 font-bold text-white">
-              Enable Auto Save
-            </button>
           </div>
         </div>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-black">
-              AI Templates Marketplace
+              AI Recording Studio
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Premium ready-made templates.
+              Record your screen, webcam and presentations with AI assistance.
             </p>
           </div>
 
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              "Screen Recording",
+              "Webcam",
+              "Microphone",
+              "System Audio",
+              "Window Capture",
+              "Browser Tab",
+              "Full Screen",
+              "Virtual Camera",
+            ].map((item) => (
+              <button
+                key={item}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Start Recording
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Pause
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Stop
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Recording Settings
+          </h2>
+
           <div className="space-y-4">
             {[
-              "Commercial Ads",
-              "YouTube Packs",
-              "TikTok Bundle",
-              "Instagram Stories",
-              "Movie Trailer",
-              "Corporate Videos",
-              "Wedding Templates",
-              "Sports Highlights",
+              "1080p",
+              "4K",
+              "60 FPS",
+              "HDR",
+              "Noise Reduction",
+              "Auto Focus",
+              "Background Blur",
+              "AI Enhancement",
+            ].map((setting) => (
+              <button
+                key={setting}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {setting}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Teleprompter
+          </h2>
+
+          <div className="space-y-5">
+            {[
+              "Import Script",
+              "Auto Scroll",
+              "Scroll Speed",
+              "Font Size",
+              "Mirror Mode",
+              "Highlight Line",
+              "Countdown",
+              "Remote Control",
             ].map((item) => (
               <button
                 key={item}
@@ -2083,26 +1802,252 @@ export default function VideoGenerator() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Presentation Mode
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Slides",
+              "Picture-in-Picture",
+              "Virtual Background",
+              "Laser Pointer",
+              "Presenter Notes",
+              "Whiteboard",
+              "Live Annotation",
+              "Audience View",
+            ].map((feature) => (
+              <button
+                key={feature}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {feature}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-black">
-              Favorite Assets
+              AI Streaming Studio
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Frequently used resources.
+              Broadcast live to multiple platforms with AI production tools.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {[
-              "Intro",
-              "Outro",
-              "Logo",
-              "Music",
-              "Voice",
-              "Transitions",
-              "Effects",
-              "Fonts",
+              "YouTube Live",
+              "Twitch",
+              "Facebook Live",
+              "Kick",
+              "LinkedIn Live",
+              "Instagram Live",
+              "RTMP",
+              "Custom Server",
+            ].map((platform) => (
+              <button
+                key={platform}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {platform}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Go Live
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Test Stream
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              End Stream
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Stream Status
+          </h2>
+
+          <div className="space-y-5">
+            {[
+              ["Status", "Offline"],
+              ["Viewers", "0"],
+              ["Bitrate", "6000 kbps"],
+              ["Latency", "Low"],
+              ["Dropped Frames", "0"],
+              ["Duration", "00:00:00"],
+            ].map((item) => (
+              <div
+                key={item[0]}
+                className="flex items-center justify-between rounded-2xl border border-white/10 p-5"
+              >
+                <span>{item[0]}</span>
+
+                <span className="font-bold text-red-500">
+                  {item[1]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Live Production
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Scene Switcher",
+              "Picture-in-Picture",
+              "Lower Thirds",
+              "Countdown Timer",
+              "Sponsor Banner",
+              "Scoreboard",
+              "Screen Share",
+              "Virtual Camera",
+            ].map((feature) => (
+              <button
+                key={feature}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {feature}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Audience Tools
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Live Chat Overlay",
+              "Polls",
+              "Q&A",
+              "Donations",
+              "Subscriber Alerts",
+              "Moderation",
+              "Viewer Analytics",
+              "Multi-stream",
+            ].map((tool) => (
+              <button
+                key={tool}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {tool}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              AI Video Enhancement
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Upscale, restore and enhance videos with professional AI tools.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              "4K Upscale",
+              "8K Upscale",
+              "Frame Interpolation",
+              "Slow Motion",
+              "HDR Enhancement",
+              "Video Restoration",
+              "AI Sharpen",
+              "Color Recovery",
+            ].map((tool) => (
+              <button
+                key={tool}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {tool}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Enhance Video
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Preview
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Compare
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Enhancement Presets
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "YouTube",
+              "Netflix",
+              "Cinema",
+              "Mobile",
+              "Gaming",
+              "Documentary",
+              "Animation",
+              "Archive Restore",
+            ].map((preset) => (
+              <button
+                key={preset}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            AI Restoration
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Scratch Removal",
+              "Dust Cleanup",
+              "Noise Reduction",
+              "Flicker Removal",
+              "Deinterlace",
+              "Colorize B&W",
+              "Stabilization",
+              "Face Recovery",
             ].map((item) => (
               <button
                 key={item}
@@ -2115,254 +2060,540 @@ export default function VideoGenerator() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Quality Controls
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "AI Sharpen",
+              "Denoise",
+              "Motion Blur Fix",
+              "HDR Tone Mapping",
+              "Brightness",
+              "Contrast",
+              "Saturation",
+              "Export Quality",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-black">
-              Rendering Credits
+              AI Animation Studio
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Current account resources.
+              Create cinematic motion graphics, logo animations and particle effects.
             </p>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-2xl bg-red-500/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-red-500">
-                640
-              </h3>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              "Logo Animation",
+              "Motion Graphics",
+              "Intro",
+              "Outro",
+              "Lower Third",
+              "Title Animation",
+              "Particle FX",
+              "Text Animation",
+            ].map((tool) => (
+              <button
+                key={tool}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {tool}
+              </button>
+            ))}
+          </div>
 
-              <p className="mt-2">
-                Credits Remaining
-              </p>
-            </div>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Generate Animation
+            </button>
 
-            <div className="rounded-2xl bg-orange-500/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-orange-400">
-                94
-              </h3>
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Preview
+            </button>
 
-              <p className="mt-2">
-                Used Today
-              </p>
-            </div>
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Save Preset
+            </button>
+          </div>
+        </div>
 
-            <div className="rounded-2xl bg-green-500/10 p-6 text-center">
-              <h3 className="text-5xl font-black text-green-500">
-                Premium
-              </h3>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Animation Presets
+          </h2>
 
-              <p className="mt-2">
-                Account Status
-              </p>
-            </div>
+          <div className="space-y-4">
+            {[
+              "Fade",
+              "Zoom",
+              "Slide",
+              "Bounce",
+              "Spin",
+              "Glitch",
+              "Neon",
+              "Cinematic",
+            ].map((preset) => (
+              <button
+                key={preset}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {preset}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Usage Dashboard
-            </h2>
-          </div>
+          <h2 className="mb-8 text-2xl font-black">
+            Keyframe Animation
+          </h2>
 
-          <div className="grid grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                428
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Videos Created
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                52TB
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Cloud Storage
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                2.4K
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Exports
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 p-6 text-center">
-              <h3 className="text-4xl font-black">
-                188
-              </h3>
-
-              <p className="mt-2 text-muted-foreground">
-                Favorites
-              </p>
-            </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Position",
+              "Scale",
+              "Rotation",
+              "Opacity",
+              "Anchor Point",
+              "Mask",
+              "Camera",
+              "Custom Curve",
+            ].map((item) => (
+              <button
+                key={item}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Notifications
-            </h2>
-          </div>
+          <h2 className="mb-8 text-2xl font-black">
+            Particle Effects
+          </h2>
 
           <div className="space-y-4">
             {[
-              "Cloud render completed",
-              "Project successfully exported",
-              "New AI model available",
-              "Credits recharged",
-              "Version auto-saved",
-              "Template marketplace updated",
+              "Fire",
+              "Smoke",
+              "Rain",
+              "Snow",
+              "Sparkles",
+              "Confetti",
+              "Lightning",
+              "Magic Dust",
+            ].map((effect) => (
+              <button
+                key={effect}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {effect}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              AI Commercial Studio
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Generate high-converting advertisements, product videos and marketing campaigns.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              "Product Ad",
+              "Social Media",
+              "YouTube Ad",
+              "Instagram Reel",
+              "TikTok Ad",
+              "Facebook Campaign",
+              "Google Ads",
+              "Brand Story",
             ].map((item) => (
-              <div
+              <button
                 key={item}
-                className="rounded-2xl border border-white/10 p-4"
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
               >
                 {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Generate Commercial
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              AI Script
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Storyboard
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Campaign Types
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "E-commerce",
+              "Fashion",
+              "Food",
+              "Education",
+              "Healthcare",
+              "Technology",
+              "Real Estate",
+              "Travel",
+            ].map((campaign) => (
+              <button
+                key={campaign}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {campaign}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Marketing Assets
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Product Showcase",
+              "Promo Banner",
+              "Call To Action",
+              "Testimonials",
+              "Offers",
+              "Brand Logo",
+              "QR Code",
+              "Watermark",
+            ].map((asset) => (
+              <button
+                key={asset}
+                className="rounded-2xl border border-white/10 p-5 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {asset}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Publishing Channels
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "YouTube",
+              "Instagram",
+              "TikTok",
+              "Facebook",
+              "LinkedIn",
+              "WhatsApp",
+              "Website",
+              "Export Campaign",
+            ].map((channel) => (
+              <button
+                key={channel}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {channel}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black">
+              AI Marketplace
+            </h2>
+
+            <p className="mt-2 text-muted-foreground">
+              Discover premium templates, LUTs, transitions and creator assets.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {[
+              "Video Templates",
+              "LUT Collection",
+              "Transition Packs",
+              "Motion Presets",
+              "Lower Thirds",
+              "Intro Kits",
+              "Outro Kits",
+              "Sound Packs",
+              "Overlay Effects",
+            ].map((item) => (
+              <button
+                key={item}
+                className="rounded-2xl border border-white/10 p-6 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
+              Browse Marketplace
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              Upload Asset
+            </button>
+
+            <button className="rounded-2xl border border-white/10 px-8 py-4 hover:bg-white/5">
+              My Downloads
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Creator Hub
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Top Creators",
+              "Trending Templates",
+              "Editor's Choice",
+              "New Releases",
+              "Weekly Picks",
+              "Best Sellers",
+              "Free Downloads",
+              "Premium Assets",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-xl border border-white/10 p-4 font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Community Sharing
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              "Publish Project",
+              "Share Template",
+              "Creator Portfolio",
+              "Community Feed",
+              "Challenges",
+              "Live Workshops",
+              "Collaboration Board",
+              "Video Showcase",
+            ].map((item) => (
+              <button
+                key={item}
+                className="w-full rounded-2xl border border-white/10 p-4 text-left font-semibold transition hover:border-red-500 hover:bg-white/5"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <h2 className="mb-8 text-2xl font-black">
+            Marketplace Statistics
+          </h2>
+
+          <div className="space-y-5">
+            {[
+              ["Templates", "48K+"],
+              ["LUT Packs", "8.5K+"],
+              ["Transitions", "15K+"],
+              ["Motion Presets", "22K+"],
+              ["Creator Assets", "310K+"],
+              ["Downloads", "12M+"],
+            ].map((item) => (
+              <div
+                key={item[0]}
+                className="flex items-center justify-between rounded-2xl border border-white/10 p-5"
+              >
+                <span>
+                  {item[0]}
+                </span>
+
+                <span className="font-bold text-red-500">
+                  {item[1]}
+                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-red-600/10 via-orange-500/10 to-yellow-500/10 p-10">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-2xl font-black">
-              Video History
+            <h2 className="text-4xl font-black">
+              Complete AI Video Platform
             </h2>
 
-            <p className="mt-2 text-muted-foreground">
-              Recently generated AI videos.
-            </p>
-          </div>
-
-          <Film className="h-7 w-7 text-red-500" />
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10 text-left">
-                <th className="pb-4">Project</th>
-                <th className="pb-4">Model</th>
-                <th className="pb-4">Resolution</th>
-                <th className="pb-4">Duration</th>
-                <th className="pb-4">Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {[
-                {
-                  project: "Luxury Car Commercial",
-                  model: "Veo 3",
-                  resolution: "4K",
-                  duration: "30s",
-                  status: "Completed",
-                },
-                {
-                  project: "Travel Cinematic",
-                  model: "Runway Gen-4",
-                  resolution: "1080p",
-                  duration: "15s",
-                  status: "Completed",
-                },
-                {
-                  project: "AI Music Video",
-                  model: "Pika 2.2",
-                  resolution: "2K",
-                  duration: "60s",
-                  status: "Rendering",
-                },
-                {
-                  project: "Product Showcase",
-                  model: "Luma Dream Machine",
-                  resolution: "1080p",
-                  duration: "20s",
-                  status: "Completed",
-                },
-                {
-                  project: "Gaming Intro",
-                  model: "Veo 3",
-                  resolution: "4K",
-                  duration: "10s",
-                  status: "Completed",
-                },
-              ].map((item) => (
-                <tr
-                  key={item.project}
-                  className="border-b border-white/5"
-                >
-                  <td className="py-5 font-semibold">
-                    {item.project}
-                  </td>
-
-                  <td>
-                    {item.model}
-                  </td>
-
-                  <td>
-                    {item.resolution}
-                  </td>
-
-                  <td>
-                    {item.duration}
-                  </td>
-
-                  <td>
-                    <span
-                      className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                        item.status === "Completed"
-                          ? "bg-green-500/10 text-green-500"
-                          : "bg-orange-500/10 text-orange-400"
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-red-600/10 to-orange-500/10 p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-3xl font-black">
-              AI Video Studio Complete
-            </h2>
-
-            <p className="mt-3 text-lg text-muted-foreground">
-              Create cinematic AI videos with professional production tools,
-              cloud rendering, character consistency, storyboard generation,
-              voice sync, analytics, and one-click exports.
+            <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
+              Create AI videos, talking avatars, commercials, cinematic films,
+              social media content, livestreams and professional productions
+              from one unified studio.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-4">
             <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-8 py-4 font-bold text-white">
-              New Project
+              Create New Video
             </button>
 
             <button className="rounded-2xl border border-white/10 px-8 py-4 font-semibold hover:bg-white/5">
-              Export All
+              Open Library
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            title: "AI Models",
+            value: "120+",
+          },
+          {
+            title: "Templates",
+            value: "50K+",
+          },
+          {
+            title: "Effects",
+            value: "2,500+",
+          },
+          {
+            title: "Export Formats",
+            value: "20+",
+          },
+        ].map((item) => (
+          <div
+            key={item.title}
+            className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center"
+          >
+            <h3 className="text-4xl font-black text-red-500">
+              {item.value}
+            </h3>
+
+            <p className="mt-3 text-muted-foreground">
+              {item.title}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-10">
+        <div className="mb-10 text-center">
+          <h2 className="text-4xl font-black">
+            Export & Publishing
+          </h2>
+
+          <p className="mt-3 text-lg text-muted-foreground">
+            Export your videos or publish directly to your favorite platforms.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            "MP4",
+            "MOV",
+            "AVI",
+            "MKV",
+            "WEBM",
+            "GIF",
+            "Alpha Channel",
+            "Image Sequence",
+            "1080p",
+            "4K UHD",
+            "8K HDR",
+            "60 FPS",
+            "YouTube",
+            "Instagram",
+            "TikTok",
+            "Commercial License",
+          ].map((item) => (
+            <div
+              key={item}
+              className="rounded-2xl border border-white/10 p-5 text-center font-semibold transition hover:border-red-500 hover:bg-white/5"
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-red-600/10 via-orange-500/10 to-yellow-500/10 p-12 text-center">
+        <h2 className="text-5xl font-black">
+          Market AI Video Studio
+        </h2>
+
+        <p className="mx-auto mt-6 max-w-4xl text-lg text-muted-foreground">
+          A complete AI-powered video creation ecosystem with text-to-video,
+          image animation, AI avatars, cinematic editing, collaboration,
+          streaming, analytics, publishing and commercial production tools.
+        </p>
+
+        <div className="mt-10 flex flex-wrap justify-center gap-5">
+          <button className="rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 px-10 py-5 text-lg font-bold text-white">
+            Launch Video Studio
+          </button>
+
+          <button className="rounded-2xl border border-white/10 px-10 py-5 text-lg font-semibold hover:bg-white/5">
+            View Documentation
+          </button>
         </div>
       </div>
     </div>
