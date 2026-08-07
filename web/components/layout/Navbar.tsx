@@ -1,231 +1,162 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import {
-  Menu,
-  X,
-  Music4,
-  Search,
-  Bell,
-  Sparkles,
-  ChevronDown,
+import Link from "next/link";
+import { 
+  Sparkles, 
+  Search, 
+  Bell, 
+  ChevronDown, 
+  Code2, 
+  Image as ImageIcon, 
+  Video, 
+  Music, 
+  Bot, 
+  Globe, 
+  Menu, 
+  X 
 } from "lucide-react";
 
-const navItems = [
-  { label: "Home", href: "/" },
-  { label: "AI Tools", href: "#tools" },
-  { label: "Features", href: "#features" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
-];
-
 export default function Navbar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hasNotifications, setHasNotifications] = useState(true);
+
+  const studiosList = [
+    { name: "AI Code Studio", desc: "Full-stack apps & APIs", href: "/studio/code", icon: <Code2 className="h-5 w-5 text-cyan-400" /> },
+    { name: "AI Image Studio", desc: "Generative art & graphics", href: "/studio/image", icon: <ImageIcon className="h-5 w-5 text-fuchsia-400" /> },
+    { name: "AI Video Studio", desc: "Cinematic videos & reels", href: "/studio/video", icon: <Video className="h-5 w-5 text-rose-400" /> },
+    { name: "AI Song Studio", desc: "Original tracks & voice", href: "/studio/song", icon: <Music className="h-5 w-5 text-amber-400" /> },
+    { name: "AI Agent Studio", desc: "Autonomous workflows", href: "/studio/agent", icon: <Bot className="h-5 w-5 text-violet-400" /> },
+    { name: "AI Website Builder", desc: "Prompt-to-site generator", href: "/studio/website", icon: <Globe className="h-5 w-5 text-emerald-400" /> },
+  ];
 
   return (
-    <>
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-
-          {/* Logo */}
-
-          <Link
-            href="/"
-            className="flex items-center gap-3"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 shadow-lg">
-
-              <Music4 className="h-6 w-6 text-white" />
-
-            </div>
-
-            <div>
-
-              <h1 className="text-xl font-black">
-                Market1 AI
-              </h1>
-
-              <p className="text-xs text-muted-foreground">
-                AI Music Platform
-              </p>
-
-            </div>
-
-          </Link>
-
-          {/* Desktop Menu */}
-
-          <nav className="hidden items-center gap-8 lg:flex">
-
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="text-sm font-medium transition hover:text-violet-500"
-              >
-                {item.label}
-              </Link>
-            ))}
-
-          </nav>
-
-          {/* Search */}
-
-          <div className="hidden xl:flex">
-
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-
-              <Search className="h-4 w-4 text-muted-foreground" />
-
-              <input
-                placeholder="Search AI..."
-                className="w-56 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-
-            </div>
-
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        
+        {/* Logo / Brand */}
+        <Link href="/" className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 via-indigo-600 to-fuchsia-500 shadow-lg shadow-cyan-500/20">
+            <Sparkles className="h-6 w-6 text-white" />
           </div>
-
-          {/* Right */}
-
-          <div className="hidden items-center gap-4 lg:flex">
-
-            <button className="relative rounded-xl border border-white/10 p-3 transition hover:bg-white/5">
-
-              <Bell className="h-5 w-5" />
-
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
-
-            </button>
-
-            <button className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold text-white transition hover:scale-105">
-
-              <Sparkles className="h-4 w-4" />
-
-              Generate
-
-            </button>
-
-            <button className="flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2 transition hover:bg-white/5">
-
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
-                M
-              </div>
-
-              <span className="font-medium">
-                Account
-              </span>
-
-              <ChevronDown className="h-4 w-4" />
-
-            </button>
-
+          <div>
+            <span className="text-xl font-black tracking-tight">Market AI</span>
+            <span className="block text-[10px] font-bold uppercase tracking-widest text-cyan-400">SaaS Ecosystem</span>
           </div>
+        </Link>
 
-          {/* Mobile */}
+        {/* Desktop Navigation Links */}
+        <nav className="hidden md:flex items-center gap-8">
+          
+          {/* AI Tools / Mega Menu Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsToolsOpen(!isToolsOpen)}
+              onBlur={() => setTimeout(() => setIsToolsOpen(false), 200)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-white transition"
+            >
+              <span>AI Studios</span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${isToolsOpen ? "rotate-180" : ""}`} />
+            </button>
 
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="rounded-xl border border-white/10 p-3 lg:hidden"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-
-        </div>
-      </header>
-
-      {/* Mobile Drawer */}
-
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[100] lg:hidden">
-
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
-          />
-
-          <aside className="absolute right-0 top-0 flex h-full w-80 flex-col border-l border-white/10 bg-background">
-
-            <div className="flex items-center justify-between border-b border-white/10 p-6">
-
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500">
-
-                  <Music4 className="h-5 w-5 text-white" />
-
-                </div>
-
-                <div>
-
-                  <h2 className="font-bold">
-                    Market1 AI
-                  </h2>
-
-                  <p className="text-xs text-muted-foreground">
-                    AI Music Platform
-                  </p>
-
-                </div>
-
-              </div>
-
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg border border-white/10 p-2"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-            </div>
-
-            <div className="p-6">
-
-              <div className="mb-6 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-
-                <Search className="h-4 w-4" />
-
-                <input
-                  placeholder="Search..."
-                  className="flex-1 bg-transparent outline-none"
-                />
-
-              </div>
-
-              <nav className="space-y-2">
-
-                {navItems.map((item) => (
+            {/* Mega Menu Panel */}
+            {isToolsOpen && (
+              <div className="absolute left-1/2 top-full mt-4 w-[600px] -translate-x-1/2 rounded-3xl border border-white/10 bg-background/95 p-6 shadow-2xl backdrop-blur-2xl grid grid-cols-2 gap-4">
+                {studiosList.map((studio) => (
                   <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-xl px-4 py-3 transition hover:bg-white/5"
+                    key={studio.name}
+                    href={studio.href}
+                    className="flex items-start gap-4 rounded-2xl border border-white/5 p-4 transition hover:border-cyan-500/50 hover:bg-white/5 group"
                   >
-                    {item.label}
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-2.5 transition group-hover:scale-110">
+                      {studio.icon}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold group-hover:text-cyan-400 transition">{studio.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">{studio.desc}</p>
+                    </div>
                   </Link>
                 ))}
+              </div>
+            )}
+          </div>
 
-              </nav>
+          <Link href="/dashboard" className="text-sm font-semibold text-muted-foreground hover:text-white transition">
+            Dashboard
+          </Link>
+          <Link href="/pricing" className="text-sm font-semibold text-muted-foreground hover:text-white transition">
+            Pricing
+          </Link>
+          <Link href="/docs" className="text-sm font-semibold text-muted-foreground hover:text-white transition">
+            Documentation
+          </Link>
+        </nav>
 
-            </div>
+        {/* Right Actions (Search, Notifications, Profile) */}
+        <div className="hidden md:flex items-center gap-4">
+          
+          {/* Quick Search trigger */}
+          <button className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-muted-foreground hover:text-white hover:border-cyan-500/50 transition">
+            <Search className="h-5 w-5" />
+          </button>
 
-            <div className="mt-auto border-t border-white/10 p-6">
+          {/* Notifications Button */}
+          <button 
+            onClick={() => setHasNotifications(false)}
+            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-muted-foreground hover:text-white hover:border-cyan-500/50 transition"
+          >
+            <Bell className="h-5 w-5" />
+            {hasNotifications && (
+              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
+          </button>
 
-              <button className="mb-4 w-full rounded-xl border border-white/10 py-3 transition hover:bg-white/5">
-                Login
-              </button>
+          {/* Launch App / Dashboard CTA */}
+          <Link
+            href="/dashboard"
+            className="rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition hover:opacity-90"
+          >
+            Launch Console
+          </Link>
+        </div>
 
-              <button className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 py-4 font-semibold text-white">
-                Generate Music
-              </button>
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="md:hidden flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white"
+        >
+          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </div>
 
-            </div>
-
-          </aside>
-
+      {/* Mobile Dropdown Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-white/10 bg-background px-6 py-6 space-y-4">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-cyan-400">Studios</p>
+            {studiosList.map((s) => (
+              <Link
+                key={s.name}
+                href={s.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block py-2 text-sm font-semibold text-muted-foreground hover:text-white"
+              >
+                {s.name}
+              </Link>
+            ))}
+          </div>
+          <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
+            <Link
+              href="/dashboard"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="w-full rounded-xl bg-cyan-600 py-3 text-center text-sm font-bold text-white"
+            >
+              Launch Console
+            </Link>
+          </div>
         </div>
       )}
-    </>
+    </header>
   );
 }
