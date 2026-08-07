@@ -1,47 +1,48 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
     question: "What is Market1 AI?",
     answer:
-      "Market1 AI is an all-in-one AI music platform for generating songs, lyrics, vocals, music videos, album covers and much more.",
+      "Market1 AI is an all-in-one AI platform that helps you create songs, lyrics, vocals, beats, music videos, album covers and more using advanced AI models.",
   },
   {
     question: "Can I use generated songs commercially?",
     answer:
-      "Yes. Depending on your subscription plan, you can use generated content for commercial purposes under our licensing terms.",
+      "Yes. Paid plans include commercial usage rights. Always review the licensing terms for your selected plan.",
   },
   {
     question: "Which languages are supported?",
     answer:
-      "Market1 AI supports more than 100 languages including English, Telugu, Hindi, Tamil, Kannada, Malayalam, Japanese, Korean, Spanish, French and many more.",
+      "Market1 AI supports more than 100 languages including English, Telugu, Hindi, Tamil, Kannada, Malayalam, Spanish, French, Japanese and many more.",
   },
   {
     question: "Does it support voice cloning?",
     answer:
-      "Yes. You can create AI voice clones, generate singing voices and customize vocal styles using advanced AI models.",
+      "Yes. You can clone voices, generate AI singers and create custom voice models depending on your subscription.",
   },
   {
-    question: "Can I upload my own music?",
+    question: "Can I upload my own audio?",
     answer:
-      "Yes. Upload your own audio for remixing, mastering, vocal removal, enhancement and AI-assisted editing.",
+      "Yes. Upload your own music for remixing, mastering, vocal separation and AI enhancement.",
   },
   {
-    question: "Which audio formats are supported?",
+    question: "Which export formats are available?",
     answer:
-      "MP3, WAV, FLAC, OGG, AAC and many other common audio formats are supported.",
+      "MP3, WAV, FLAC and additional export options will be available depending on the selected tool.",
   },
   {
-    question: "Do I need music production experience?",
+    question: "Is there an API?",
     answer:
-      "No. Simply describe what you want and Market1 AI handles the music generation process.",
+      "Yes. Developers and Enterprise customers can integrate Market1 AI through secure REST APIs.",
   },
   {
-    question: "Is there an API available?",
+    question: "Do I need music experience?",
     answer:
-      "Yes. Enterprise customers can integrate Market1 AI directly into their own applications using secure APIs.",
+      "No. Simply describe what you want, and the AI generates professional-quality results for you.",
   },
 ];
 
@@ -51,22 +52,22 @@ export default function FAQ() {
   return (
     <section
       id="faq"
-      className="py-24"
+      className="py-28"
     >
       <div className="mx-auto max-w-5xl px-6">
 
         <div className="mb-16 text-center">
 
-          <span className="rounded-full bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-500">
+          <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-5 py-2 text-sm font-semibold text-violet-400">
             FAQ
           </span>
 
-          <h2 className="mt-6 text-4xl font-black md:text-5xl">
+          <h2 className="mt-6 text-5xl font-black">
             Frequently Asked Questions
           </h2>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Everything you need to know about Market1 AI.
+          <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground">
+            Everything you need to know before using Market1 AI.
           </p>
 
         </div>
@@ -76,28 +77,30 @@ export default function FAQ() {
           {faqs.map((faq, index) => (
             <div
               key={faq.question}
-              className="overflow-hidden rounded-2xl border bg-card"
+              className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur"
             >
 
               <button
                 onClick={() =>
                   setOpen(open === index ? null : index)
                 }
-                className="flex w-full items-center justify-between px-6 py-5 text-left"
+                className="flex w-full items-center justify-between px-8 py-6 text-left"
               >
 
                 <span className="text-lg font-semibold">
                   {faq.question}
                 </span>
 
-                <span className="text-2xl font-bold">
-                  {open === index ? "−" : "+"}
-                </span>
+                <ChevronDown
+                  className={`h-5 w-5 transition-transform ${
+                    open === index ? "rotate-180" : ""
+                  }`}
+                />
 
               </button>
 
               {open === index && (
-                <div className="border-t px-6 py-5 text-muted-foreground leading-8">
+                <div className="border-t border-white/10 px-8 py-6 leading-8 text-muted-foreground">
                   {faq.answer}
                 </div>
               )}
