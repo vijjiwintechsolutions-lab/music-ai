@@ -3,28 +3,28 @@ const testimonials = [
     name: "Alex Johnson",
     role: "Music Producer",
     company: "BeatLab Studio",
-    rating: 5,
     image: "🎧",
+    rating: 5,
     review:
-      "Market1 AI completely changed my workflow. I can generate professional song ideas in minutes instead of spending hours.",
+      "Market1 AI completely transformed my workflow. I can create songs in minutes instead of days.",
   },
   {
     name: "Sophia Williams",
     role: "Content Creator",
-    company: "YouTube",
-    rating: 5,
+    company: "YouTube Creator",
     image: "🎤",
+    rating: 5,
     review:
-      "The AI lyrics, voice generation and music creation are incredibly impressive. My audience loves the results.",
+      "The AI lyrics, vocals and music quality are unbelievable. My audience loves the songs.",
   },
   {
     name: "Rahul Kumar",
     role: "Independent Artist",
     company: "Spotify Artist",
-    rating: 5,
     image: "🎵",
+    rating: 5,
     review:
-      "I produced an entire album using Market1 AI. The quality exceeded my expectations and saved me countless hours.",
+      "This is the best AI music platform I've ever used. Voice cloning and mastering are outstanding.",
   },
 ];
 
@@ -32,23 +32,23 @@ export default function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="py-24"
+      className="py-28"
     >
       <div className="mx-auto max-w-7xl px-6">
 
         <div className="mb-16 text-center">
 
-          <span className="rounded-full bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-500">
+          <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-5 py-2 text-sm font-semibold text-cyan-400">
             TESTIMONIALS
           </span>
 
-          <h2 className="mt-6 text-4xl font-black md:text-5xl">
-            Loved by Creators Worldwide
+          <h2 className="mt-6 text-5xl font-black">
+            Loved By Creators Worldwide
           </h2>
 
           <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground">
-            Thousands of musicians, creators and businesses are already
-            building with Market1 AI.
+            Thousands of musicians, creators and businesses trust
+            Market1 AI to power their creative workflow.
           </p>
 
         </div>
@@ -58,43 +58,41 @@ export default function Testimonials() {
           {testimonials.map((item) => (
             <div
               key={item.name}
-              className="rounded-3xl border bg-card p-8 transition-all duration-300 hover:-translate-y-2 hover:border-violet-500 hover:shadow-2xl"
+              className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur transition duration-300 hover:-translate-y-2 hover:border-violet-500 hover:shadow-2xl"
             >
 
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-6 flex items-center gap-4">
 
-                <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 text-3xl">
 
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/10 text-3xl">
-                    {item.image}
-                  </div>
+                  {item.image}
 
-                  <div>
+                </div>
 
-                    <h3 className="font-bold">
-                      {item.name}
-                    </h3>
+                <div>
 
-                    <p className="text-sm text-muted-foreground">
-                      {item.role}
-                    </p>
+                  <h3 className="text-xl font-bold">
+                    {item.name}
+                  </h3>
 
-                    <p className="text-xs text-violet-500">
-                      {item.company}
-                    </p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.role}
+                  </p>
 
-                  </div>
+                  <p className="text-xs text-violet-400">
+                    {item.company}
+                  </p>
 
                 </div>
 
               </div>
 
-              <div className="mb-6 flex">
+              <div className="mb-6 flex gap-1">
 
                 {Array.from({ length: item.rating }).map((_, index) => (
                   <span
                     key={index}
-                    className="text-xl text-yellow-500"
+                    className="text-xl"
                   >
                     ⭐
                   </span>
