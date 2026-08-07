@@ -1157,7 +1157,3 @@ Brings your memory tonight.`}
 
   );
 }
-    </div>
-
-  );
-}
