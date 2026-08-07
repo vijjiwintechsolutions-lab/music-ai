@@ -9,6 +9,7 @@ import HowItWorks from "@/components/landing/HowItWorks";
 import Pricing from "@/components/landing/Pricing";
 import Testimonials from "@/components/landing/Testimonials";
 import FAQ from "@/components/landing/FAQ";
+import CTA from "@/components/landing/CTA";
 
 export default function Home() {
   return (
@@ -32,6 +33,8 @@ export default function Home() {
         <Testimonials />
 
         <FAQ />
+
+        <CTA />
 
       </main>
 
