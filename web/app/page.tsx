@@ -3,6 +3,8 @@ import Footer from "@/components/layout/Footer";
 
 import Hero from "@/components/landing/Hero";
 import TrustedCompanies from "@/components/landing/TrustedCompanies";
+import Stats from "@/components/landing/Stats";
+import Showcase from "@/components/landing/Showcase";
 import AiTools from "@/components/landing/AiTools";
 import Features from "@/components/landing/Features";
 import HowItWorks from "@/components/landing/HowItWorks";
@@ -21,6 +23,10 @@ export default function Home() {
         <Hero />
 
         <TrustedCompanies />
+
+        <Stats />
+
+        <Showcase />
 
         <AiTools />
 
