@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { Music4 } from "lucide-react";
+
 import {
-  Music4,
-  Facebook,
-  Instagram,
-  Twitter,
-  Youtube,
-  Github,
-} from "lucide-react";
+  FaFacebook,
+  FaInstagram,
+  FaXTwitter,
+  FaYoutube,
+  FaGithub,
+} from "react-icons/fa6";
 
 const productLinks = [
   "AI Song Generator",
@@ -42,8 +43,6 @@ export default function Footer() {
 
         <div className="grid gap-12 lg:grid-cols-4">
 
-          {/* Brand */}
-
           <div>
 
             <div className="flex items-center gap-3">
@@ -53,7 +52,6 @@ export default function Footer() {
               </div>
 
               <div>
-
                 <h2 className="text-2xl font-black">
                   Market1 AI
                 </h2>
@@ -61,7 +59,6 @@ export default function Footer() {
                 <p className="text-sm text-muted-foreground">
                   AI Music Platform
                 </p>
-
               </div>
 
             </div>
@@ -74,46 +71,29 @@ export default function Footer() {
 
             <div className="mt-8 flex gap-4">
 
-              <a
-                href="#"
-                className="rounded-xl border p-3 transition hover:bg-accent"
-              >
-                <Facebook className="h-5 w-5" />
+              <a href="#" className="rounded-xl border p-3 hover:bg-accent">
+                <FaFacebook size={18} />
               </a>
 
-              <a
-                href="#"
-                className="rounded-xl border p-3 transition hover:bg-accent"
-              >
-                <Instagram className="h-5 w-5" />
+              <a href="#" className="rounded-xl border p-3 hover:bg-accent">
+                <FaInstagram size={18} />
               </a>
 
-              <a
-                href="#"
-                className="rounded-xl border p-3 transition hover:bg-accent"
-              >
-                <Twitter className="h-5 w-5" />
+              <a href="#" className="rounded-xl border p-3 hover:bg-accent">
+                <FaXTwitter size={18} />
               </a>
 
-              <a
-                href="#"
-                className="rounded-xl border p-3 transition hover:bg-accent"
-              >
-                <Youtube className="h-5 w-5" />
+              <a href="#" className="rounded-xl border p-3 hover:bg-accent">
+                <FaYoutube size={18} />
               </a>
 
-              <a
-                href="#"
-                className="rounded-xl border p-3 transition hover:bg-accent"
-              >
-                <Github className="h-5 w-5" />
+              <a href="#" className="rounded-xl border p-3 hover:bg-accent">
+                <FaGithub size={18} />
               </a>
 
             </div>
 
           </div>
-
-          {/* Product */}
 
           <div>
 
@@ -122,23 +102,16 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-4">
-
               {productLinks.map((item) => (
                 <li key={item}>
-                  <Link
-                    href="#"
-                    className="text-muted-foreground transition hover:text-violet-500"
-                  >
+                  <Link href="#" className="text-muted-foreground hover:text-violet-500">
                     {item}
                   </Link>
                 </li>
               ))}
-
             </ul>
 
           </div>
-
-          {/* Company */}
 
           <div>
 
@@ -147,23 +120,16 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-4">
-
               {companyLinks.map((item) => (
                 <li key={item}>
-                  <Link
-                    href="#"
-                    className="text-muted-foreground transition hover:text-violet-500"
-                  >
+                  <Link href="#" className="text-muted-foreground hover:text-violet-500">
                     {item}
                   </Link>
                 </li>
               ))}
-
             </ul>
 
           </div>
-
-          {/* Support */}
 
           <div>
 
@@ -172,18 +138,13 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-4">
-
               {supportLinks.map((item) => (
                 <li key={item}>
-                  <Link
-                    href="#"
-                    className="text-muted-foreground transition hover:text-violet-500"
-                  >
+                  <Link href="#" className="text-muted-foreground hover:text-violet-500">
                     {item}
                   </Link>
                 </li>
               ))}
-
             </ul>
 
           </div>
@@ -200,24 +161,15 @@ export default function Footer() {
 
             <div className="flex gap-6 text-sm">
 
-              <Link
-                href="#"
-                className="text-muted-foreground hover:text-violet-500"
-              >
+              <Link href="#" className="text-muted-foreground hover:text-violet-500">
                 Privacy
               </Link>
 
-              <Link
-                href="#"
-                className="text-muted-foreground hover:text-violet-500"
-              >
+              <Link href="#" className="text-muted-foreground hover:text-violet-500">
                 Terms
               </Link>
 
-              <Link
-                href="#"
-                className="text-muted-foreground hover:text-violet-500"
-              >
+              <Link href="#" className="text-muted-foreground hover:text-violet-500">
                 Cookies
               </Link>
 
