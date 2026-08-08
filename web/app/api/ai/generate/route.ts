@@ -8,12 +8,14 @@ export async function POST(req: Request) {
 
     if (!prompt) {
       return NextResponse.json(
-        { success: false, error: "ప్రాంప్ట్ (Prompt) అందించడం తప్పనిసరి." },
+        {
+          success: false,
+          error: "ప్రాంప్ట్ (Prompt) అందించడం తప్పనిసరి.",
+        },
         { status: 400 }
       );
     }
 
-    // AI రూటర్ ద్వారా జనరేషన్ కాల్ చేయడం
     const result = await routeAIGeneration({
       prompt,
       provider: provider || "gemini",
@@ -21,7 +23,10 @@ export async function POST(req: Request) {
 
     if (!result.success) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        {
+          success: false,
+          error: result.error,
+        },
         { status: 500 }
       );
     }
@@ -33,7 +38,12 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: err.message || "సర్వర్ లోపం ఏర్పడింది." },
+      {
+        success: false,
+        error:
+          err.message ||
+          "సర్వర్ లోపం ఏర్పడింది.",
+      },
       { status: 500 }
     );
   }
