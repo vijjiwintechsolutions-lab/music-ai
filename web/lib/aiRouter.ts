@@ -3,7 +3,8 @@
 export type AIProvider =
   | "openai"
   | "anthropic"
-  | "gemini";
+  | "gemini"
+  | "huggingface";
 
 interface GenerationRequest {
   prompt: string;
@@ -43,6 +44,9 @@ export async function routeAIGeneration(
       case "anthropic":
         return await generateWithAnthropic(request);
 
+      case "huggingface":
+        return await generateWithHuggingFace(request);
+
       case "gemini":
       default:
         return await generateWithGemini(request);
@@ -51,7 +55,7 @@ export async function routeAIGeneration(
     const message =
       err instanceof Error
         ? err.message
-        : "అవుట్‌పుట్ జనరేట్ చేయడంలో లోపం ఏర్పడింది.";
+        : "AI generation failed.";
 
     return {
       success: false,
@@ -63,7 +67,7 @@ export async function routeAIGeneration(
 }
 
 /* =========================================================
-   GOOGLE GEMINI
+   GEMINI
    ========================================================= */
 
 async function generateWithGemini(
@@ -79,7 +83,7 @@ async function generateWithGemini(
       data: "",
       providerUsed: "gemini",
       error:
-        "GEMINI_API_KEY is not configured in Vercel Environment Variables.",
+        "GEMINI_API_KEY is not configured.",
     };
   }
 
@@ -160,7 +164,7 @@ async function generateWithOpenAI(
       data: "",
       providerUsed: "openai",
       error:
-        "OPENAI_API_KEY is not configured in Vercel Environment Variables.",
+        "OPENAI_API_KEY is not configured.",
     };
   }
 
@@ -234,7 +238,7 @@ async function generateWithAnthropic(
       data: "",
       providerUsed: "anthropic",
       error:
-        "ANTHROPIC_API_KEY is not configured in Vercel Environment Variables.",
+        "ANTHROPIC_API_KEY is not configured.",
     };
   }
 
@@ -303,5 +307,78 @@ async function generateWithAnthropic(
     success: true,
     data: text,
     providerUsed: "anthropic",
+  };
+}
+
+/* =========================================================
+   HUGGING FACE
+   ========================================================= */
+
+async function generateWithHuggingFace(
+  request: GenerationRequest
+): Promise<GenerationResponse> {
+  const token = process.env.HF_TOKEN;
+
+  if (!token) {
+    return {
+      success: false,
+      data: "",
+      providerUsed: "huggingface",
+      error:
+        "HF_TOKEN is not configured.",
+    };
+  }
+
+  const model =
+    process.env.HF_MODEL ||
+    "meta-llama/Llama-3.1-8B-Instruct";
+
+  const response = await fetch(
+    "https://router.huggingface.co/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "user",
+            content: request.prompt,
+          },
+        ],
+        max_tokens:
+          request.maxTokens ?? 2048,
+        temperature:
+          request.temperature ?? 0.7,
+      }),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.error?.message ||
+        "Hugging Face API request failed."
+    );
+  }
+
+  const text =
+    result?.choices?.[0]?.message?.content ||
+    "";
+
+  if (!text) {
+    throw new Error(
+      "Hugging Face returned an empty response."
+    );
+  }
+
+  return {
+    success: true,
+    data: text,
+    providerUsed: "huggingface",
   };
 }
