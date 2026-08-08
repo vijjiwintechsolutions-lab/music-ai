@@ -30,9 +30,7 @@ export default function ChatStudio() {
     },
   ]);
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     const prompt = input.trim();
@@ -66,27 +64,70 @@ export default function ChatStudio() {
           body: JSON.stringify({
             prompt,
             type: "chat",
+
+            // Explicitly use Hugging Face
+            // for the current open-source AI test.
+            provider: "huggingface",
+
+            maxTokens: 2048,
+            temperature: 0.7,
           }),
         }
       );
 
-      const data = await response.json();
+      let data: any = null;
 
-      if (!response.ok) {
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          `AI server returned an invalid response. HTTP ${response.status}`
+        );
+      }
+
+      if (!response.ok || data?.success === false) {
         throw new Error(
           data?.error ||
-            "Unable to generate a response."
+            `Unable to generate a response. HTTP ${response.status}`
+        );
+      }
+
+      /*
+       * Our API returns:
+       *
+       * {
+       *   success: true,
+       *   data: "...AI response...",
+       *   providerUsed: "huggingface"
+       * }
+       *
+       * Therefore data.data is the primary response.
+       */
+      const assistantContent =
+        typeof data?.data === "string"
+          ? data.data
+          : typeof data?.text === "string"
+          ? data.text
+          : typeof data?.response === "string"
+          ? data.response
+          : typeof data?.result === "string"
+          ? data.result
+          : "";
+
+      if (!assistantContent.trim()) {
+        throw new Error(
+          `AI returned an empty response.${
+            data?.providerUsed
+              ? ` Provider: ${data.providerUsed}`
+              : ""
+          }`
         );
       }
 
       const assistantMessage: Message = {
         id: Date.now() + 1,
         role: "assistant",
-        content:
-          data?.text ||
-          data?.response ||
-          data?.result ||
-          "I couldn't generate a response.",
+        content: assistantContent,
       };
 
       setMessages((current) => [
@@ -94,13 +135,15 @@ export default function ChatStudio() {
         assistantMessage,
       ]);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+
       const assistantMessage: Message = {
         id: Date.now() + 1,
         role: "assistant",
-        content:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong. Please try again.",
+        content: `AI Error:\n\n${errorMessage}`,
       };
 
       setMessages((current) => [
@@ -112,9 +155,7 @@ export default function ChatStudio() {
     }
   }
 
-  async function copyMessage(
-    content: string
-  ) {
+  async function copyMessage(content: string) {
     try {
       await navigator.clipboard.writeText(
         content
@@ -128,7 +169,7 @@ export default function ChatStudio() {
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="mb-6 flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-xl backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-6 flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.02] p-5 shadow-xl">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-violet-600 shadow-lg">
               <MessageCircle className="h-6 w-6 text-white" />
@@ -244,9 +285,7 @@ export default function ChatStudio() {
                   key={suggestion}
                   type="button"
                   onClick={() =>
-                    setInput(
-                      suggestion
-                    )
+                    setInput(suggestion)
                   }
                   className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-muted-foreground transition hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:text-cyan-300"
                 >
@@ -265,14 +304,11 @@ export default function ChatStudio() {
               <textarea
                 value={input}
                 onChange={(event) =>
-                  setInput(
-                    event.target.value
-                  )
+                  setInput(event.target.value)
                 }
                 onKeyDown={(event) => {
                   if (
-                    event.key ===
-                      "Enter" &&
+                    event.key === "Enter" &&
                     !event.shiftKey
                   ) {
                     event.preventDefault();
