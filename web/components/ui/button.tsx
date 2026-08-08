@@ -21,7 +21,8 @@ export interface ButtonProps
     | "default"
     | "sm"
     | "lg"
-    | "icon";
+    | "icon"
+    | "icon-sm";
 }
 
 const Button = React.forwardRef<
@@ -88,6 +89,9 @@ const Button = React.forwardRef<
 
       icon:
         "h-10 w-10",
+
+      "icon-sm":
+        "h-8 w-8 rounded-md p-0",
     };
 
     return (
