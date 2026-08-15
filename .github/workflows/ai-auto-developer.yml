@@ -11,160 +11,40 @@ permissions:
   checks: read
   deployments: read
 
-concurrency:
-  group: ai-auto-developer-main
-  cancel-in-progress: false
-
-env:
-  WORKDIR: web
-  MAX_ATTEMPTS: "3"
-  OPENAI_MODEL: gpt-4.1
-
 jobs:
-  auto-developer:
+  automation-smoke-test:
+    name: Automation Smoke Test
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
-      - name: Checkout main
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Configure Git
+      - name: Verify repository
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Verify OpenAI secret
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          test -n "$OPENAI_API_KEY" || { echo "OPENAI_API_KEY is missing."; exit 1; }
-          echo "OPENAI_API_KEY=present"
+          echo "GitHub Actions runner is working."
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Commit: $GITHUB_SHA"
+          test -f web/package.json
+          test -f web/next.config.* || true
 
       - name: Install dependencies
-        working-directory: ${{ env.WORKDIR }}
+        working-directory: web
         run: npm install --legacy-peer-deps
 
-      - name: Build, diagnose, repair and rebuild
+      - name: Run production build
+        working-directory: web
+        run: npm run build
+
+      - name: Verify automation secret exists
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || env.OPENAI_MODEL }}
-        shell: bash
         run: |
-          set -u
-          attempt=1
-          while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
-            echo "===== AUTONOMOUS ATTEMPT $attempt/$MAX_ATTEMPTS ====="
-            set +e
-            npm run build --prefix "$WORKDIR" > /tmp/music-ai-build.log 2>&1
-            code=$?
-            set -e
+          test -n "$OPENAI_API_KEY"
+          echo "OPENAI_API_KEY is configured."
 
-            if [ "$code" -eq 0 ]; then
-              echo "LOCAL_BUILD=PASS"
-              exit 0
-            fi
-
-            echo "LOCAL_BUILD=FAIL"
-            tail -n 300 /tmp/music-ai-build.log
-
-            if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
-              exit "$code"
-            fi
-
-            python - <<'PY'
-import json, os
-from pathlib import Path
-
-root = Path(os.environ["WORKDIR"])
-parts = ["# BUILD ERROR\n", Path("/tmp/music-ai-build.log").read_text(errors="replace")[-30000:]]
-for base in [root / "app", root / "lib", root / "components"]:
-    if not base.exists():
-        continue
-    for p in sorted(base.rglob("*")):
-        if p.is_file() and p.suffix in {".ts", ".tsx", ".mts", ".mjs", ".json"} and "node_modules" not in p.parts:
-            try:
-                if p.stat().st_size <= 20000:
-                    parts.append(f"\n===== {p.as_posix()} =====\n")
-                    parts.append(p.read_text(errors="replace"))
-            except OSError:
-                pass
-context = "".join(parts)[-150000:]
-prompt = f'''You are the repair agent for a real Next.js 14 / TypeScript repository.
-Fix ONLY the current build failure shown below.
-Do not redesign the app.
-Do not remove working features.
-Do not add dependencies unless absolutely required.
-Do not modify .github/workflows files.
-Do not invent APIs or pretend unavailable services work.
-Return ONLY a unified git diff suitable for git apply.
-If no safe fix exists, return exactly NO_SAFE_PATCH.
-
-{context}'''
-Path("/tmp/openai-request.json").write_text(json.dumps({
-    "model": os.environ.get("OPENAI_MODEL", "gpt-4.1"),
-    "input": prompt,
-    "max_output_tokens": 12000,
-}))
-PY
-
-            curl -fsS https://api.openai.com/v1/responses \
-              -H "Authorization: Bearer $OPENAI_API_KEY" \
-              -H "Content-Type: application/json" \
-              --data-binary @/tmp/openai-request.json > /tmp/openai-response.json
-
-            python - <<'PY'
-import json
-from pathlib import Path
-
-data = json.loads(Path("/tmp/openai-response.json").read_text())
-text = data.get("output_text", "") or ""
-if not text:
-    for item in data.get("output", []):
-        for content in item.get("content", []):
-            if content.get("type") == "output_text":
-                text += content.get("text", "")
-Path("/tmp/ai.patch").write_text(text.strip())
-PY
-
-            if grep -qx "NO_SAFE_PATCH" /tmp/ai.patch; then
-              echo "AI returned NO_SAFE_PATCH"
-              exit "$code"
-            fi
-
-            sed -n '/^diff --git /,$p' /tmp/ai.patch > /tmp/ai-clean.patch
-            test -s /tmp/ai-clean.patch || { echo "No usable unified diff returned by OpenAI."; cat /tmp/ai.patch; exit "$code"; }
-            git apply --check /tmp/ai-clean.patch || { echo "AI patch failed git apply --check."; cat /tmp/ai-clean.patch; exit "$code"; }
-            git apply /tmp/ai-clean.patch
-            git diff --check
-            git add -A
-            git commit -m "fix: autonomous AI build repair [ai-auto]"
-            git push origin HEAD:main
-            attempt=$((attempt + 1))
-          done
-
-      - name: Report Vercel deployment check
-        if: ${{ success() }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
+      - name: Automation smoke test passed
         run: |
-          sha=$(git rev-parse HEAD)
-          echo "Waiting briefly for Vercel check on $sha"
-          for i in $(seq 1 20); do
-            checks=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100" 2>/dev/null || echo '{"check_runs":[]}')
-            line=$(echo "$checks" | jq -r '.check_runs[] | select((.name // "") | test("vercel"; "i")) | [.name,.status,(.conclusion // ""),.html_url] | @tsv' | head -n 1)
-            if [ -n "$line" ]; then
-              echo "VERCEL_CHECK=$line"
-              status=$(echo "$line" | cut -f2)
-              conclusion=$(echo "$line" | cut -f3)
-              if [ "$status" = "completed" ]; then
-                [ "$conclusion" = "success" ] || exit 1
-                exit 0
-              fi
-            fi
-            sleep 10
-          done
-          echo "Vercel check was not visible through GitHub within the wait window; local build passed."
-          exit 0
+          echo "AUTOMATION_SMOKE_TEST=PASS"
+          echo "GitHub Actions can execute the repository build."
+          echo "Next phase: enable the bounded AI repair loop only after this workflow is confirmed green."
