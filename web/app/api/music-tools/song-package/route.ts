@@ -66,9 +66,13 @@ function parseJson(value: string): Record<string, unknown> | null {
 }
 
 function stringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string" && item.trim())
-    : [];
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is string => {
+      return typeof item === "string" && item.trim().length > 0;
+    })
+    .map((item) => item.trim());
 }
 
 function isProvider(value: string): value is "openai" | "anthropic" | "gemini" | "huggingface" {
@@ -215,13 +219,13 @@ Lyrics must be original. Use clear section labels. If Instrumental is Yes, lyric
     const progression = suggestChordProgression(key, mood);
 
     const outline = parsed.outline && typeof parsed.outline === "object" && !Array.isArray(parsed.outline)
-      ? parsed.outline
+      ? parsed.outline as Record<string, unknown>
       : {};
     const arrangement = parsed.arrangement && typeof parsed.arrangement === "object" && !Array.isArray(parsed.arrangement)
-      ? parsed.arrangement
+      ? parsed.arrangement as Record<string, unknown>
       : {};
     const metadata = parsed.metadata && typeof parsed.metadata === "object" && !Array.isArray(parsed.metadata)
-      ? parsed.metadata
+      ? parsed.metadata as Record<string, unknown>
       : {};
 
     return NextResponse.json({
