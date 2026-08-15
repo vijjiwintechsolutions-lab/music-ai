@@ -2,27 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Music4,
-  Wand2,
-  Sparkles,
-  Globe,
-  Clock3,
-  Cpu,
-  Settings2,
-  Loader2,
-  Copy,
-  Check,
   AlertCircle,
+  Check,
+  Clock3,
+  Copy,
+  Cpu,
+  FileText,
+  Globe,
+  Guitar,
+  ListMusic,
+  Loader2,
+  Music4,
+  Pause,
+  Play,
+  RefreshCw,
+  Settings2,
+  Sparkles,
+  Square,
+  Tags,
   Volume2,
   VolumeX,
-  Play,
-  Pause,
-  Square,
-  RefreshCw,
-  FileText,
-  ListMusic,
-  Guitar,
-  Tags,
+  Wand2,
 } from "lucide-react";
 
 type GenerationStatus =
@@ -90,6 +90,11 @@ type SongPackage = {
   outline: SongOutline;
   arrangement: Arrangement;
   metadata: SongMetadata;
+};
+
+type ChordResult = {
+  progression: ChordProgression[];
+  formatted: string;
 };
 
 const genres = [
@@ -213,6 +218,24 @@ const EMPTY_ARRANGEMENT: Arrangement = {
   dynamics: "",
 };
 
+function cleanString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(
+      (item): item is string =>
+        typeof item === "string",
+    )
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function createDefaultMetadata(
   genre: string,
   mood: string,
@@ -236,30 +259,19 @@ function createDefaultMetadata(
     vocalType: singer,
     energy: mood,
     theme: "",
-    tags: [genre, mood, language].filter(Boolean),
+    tags: [genre, mood, language].filter(
+      Boolean,
+    ),
   };
 }
 
-function cleanString(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function parseJsonFromAI(text: string): Record<string, unknown> | null {
+function parseJsonFromAI(
+  text: string,
+): Record<string, unknown> | null {
   const trimmed = text.trim();
 
   try {
-    const parsed = JSON.parse(trimmed);
+    const parsed: unknown = JSON.parse(trimmed);
 
     if (
       parsed &&
@@ -269,7 +281,7 @@ function parseJsonFromAI(text: string): Record<string, unknown> | null {
       return parsed as Record<string, unknown>;
     }
   } catch {
-    // Continue with fenced JSON extraction.
+    // Continue.
   }
 
   const fencedMatch = trimmed.match(
@@ -278,7 +290,9 @@ function parseJsonFromAI(text: string): Record<string, unknown> | null {
 
   if (fencedMatch?.[1]) {
     try {
-      const parsed = JSON.parse(fencedMatch[1]);
+      const parsed: unknown = JSON.parse(
+        fencedMatch[1],
+      );
 
       if (
         parsed &&
@@ -288,18 +302,21 @@ function parseJsonFromAI(text: string): Record<string, unknown> | null {
         return parsed as Record<string, unknown>;
       }
     } catch {
-      // Continue with balanced-object extraction.
+      // Continue.
     }
   }
 
   const firstBrace = trimmed.indexOf("{");
   const lastBrace = trimmed.lastIndexOf("}");
 
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    const candidate = trimmed.slice(firstBrace, lastBrace + 1);
-
+  if (
+    firstBrace >= 0 &&
+    lastBrace > firstBrace
+  ) {
     try {
-      const parsed = JSON.parse(candidate);
+      const parsed: unknown = JSON.parse(
+        trimmed.slice(firstBrace, lastBrace + 1),
+      );
 
       if (
         parsed &&
@@ -354,6 +371,9 @@ function normalizeSongPackage(
     cleanString(raw.lyrics) ||
     cleanString(raw.generatedLyrics);
 
+  const metadataTags =
+    normalizeStringArray(rawMetadata.tags);
+
   const metadata: SongMetadata = {
     ...defaults,
     title,
@@ -378,10 +398,13 @@ function normalizeSongPackage(
       defaults.key,
     timeSignature:
       cleanString(rawMetadata.timeSignature) ||
-      "4/4",
+      defaults.timeSignature,
     durationSeconds:
-      typeof rawMetadata.durationSeconds === "number" &&
-      Number.isFinite(rawMetadata.durationSeconds)
+      typeof rawMetadata.durationSeconds ===
+        "number" &&
+      Number.isFinite(
+        rawMetadata.durationSeconds,
+      )
         ? rawMetadata.durationSeconds
         : defaults.durationSeconds,
     singer:
@@ -397,8 +420,8 @@ function normalizeSongPackage(
     theme:
       cleanString(rawMetadata.theme),
     tags:
-      normalizeStringArray(rawMetadata.tags).length > 0
-        ? normalizeStringArray(rawMetadata.tags)
+      metadataTags.length
+        ? metadataTags
         : defaults.tags,
   };
 
@@ -429,11 +452,15 @@ function normalizeSongPackage(
       cleanString(rawArrangement.finalChorus),
     outro: cleanString(rawArrangement.outro),
     instruments:
-      normalizeStringArray(rawArrangement.instruments),
+      normalizeStringArray(
+        rawArrangement.instruments,
+      ),
     vocalStyle:
       cleanString(rawArrangement.vocalStyle),
     productionStyle:
-      cleanString(rawArrangement.productionStyle),
+      cleanString(
+        rawArrangement.productionStyle,
+      ),
     dynamics:
       cleanString(rawArrangement.dynamics),
   };
@@ -452,7 +479,14 @@ async function callAI(
   prompt: string,
   maxTokens = 4096,
 ): Promise<string> {
-  const response = await fetch("/api/ai/generate", {
+  /*
+   * Existing route:
+   * web/app/ai/generate/route.ts
+   *
+   * Therefore the browser URL is:
+   * /ai/generate
+   */
+  const response = await fetch("/ai/generate", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -503,7 +537,9 @@ async function callAI(
     cleanString(data.result);
 
   if (!output) {
-    throw new Error("AI returned an empty response.");
+    throw new Error(
+      "AI returned an empty response.",
+    );
   }
 
   return output;
@@ -512,12 +548,12 @@ async function callAI(
 async function fetchChords(
   musicalKey: string,
   mood: string,
-): Promise<{
-  progression: ChordProgression[];
-  formatted: string;
-}> {
+): Promise<ChordResult> {
   const key = musicalKey
-    .replace(/\s+(Major|Minor)$/i, "")
+    .replace(
+      /\s+(Major|Minor)$/i,
+      "",
+    )
     .trim();
 
   const response = await fetch(
@@ -553,13 +589,20 @@ async function fetchChords(
     );
   }
 
-  const progression = Array.isArray(data.progression)
+  const progression = Array.isArray(
+    data.progression,
+  )
     ? (data.progression as ChordProgression[])
     : [];
 
-  const formatted = cleanString(data.formatted);
+  const formatted = cleanString(
+    data.formatted,
+  );
 
-  if (!progression.length && !formatted) {
+  if (
+    progression.length === 0 &&
+    !formatted
+  ) {
     throw new Error(
       "Chord API returned an empty progression.",
     );
@@ -571,20 +614,28 @@ async function fetchChords(
   };
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(
+  seconds: number,
+): string {
   const safeSeconds = Math.max(
     0,
     Math.round(seconds),
   );
 
-  return `${Math.floor(safeSeconds / 60)
+  return `${Math.floor(
+    safeSeconds / 60,
+  )
     .toString()
-    .padStart(2, "0")}:${(safeSeconds % 60)
+    .padStart(2, "0")}:${(
+    safeSeconds % 60
+  )
     .toString()
     .padStart(2, "0")}`;
 }
 
-function getSpeechLanguage(language: string): string {
+function getSpeechLanguage(
+  language: string,
+): string {
   const map: Record<string, string> = {
     English: "en-US",
     Telugu: "te-IN",
@@ -619,7 +670,10 @@ function downloadText(
 
   anchor.href = url;
   anchor.download = filename;
+
+  document.body.appendChild(anchor);
   anchor.click();
+  anchor.remove();
 
   window.setTimeout(() => {
     URL.revokeObjectURL(url);
@@ -628,12 +682,9 @@ function downloadText(
 
 function buildProjectExport(
   song: SongPackage,
-  chords: {
-    progression: ChordProgression[];
-    formatted: string;
-  },
+  chords: ChordResult,
   settings: Record<string, unknown>,
-) {
+): string {
   return JSON.stringify(
     {
       exportedAt: new Date().toISOString(),
@@ -656,23 +707,30 @@ export default function SongGenerator() {
   const [model, setModel] =
     useState(models[0]);
 
-  const [duration, setDuration] = useState(180);
+  const [duration, setDuration] =
+    useState(180);
 
   const [instrumental, setInstrumental] =
     useState(false);
+
   const [explicitLyrics, setExplicitLyrics] =
     useState(false);
+
   const [highQuality, setHighQuality] =
     useState(true);
 
-  const [tempo, setTempo] = useState(120);
+  const [tempo, setTempo] =
+    useState(120);
+
   const [musicalKey, setMusicalKey] =
     useState("C Major");
+
   const [singer, setSinger] =
     useState("Male");
 
   const [creativity, setCreativity] =
     useState(70);
+
   const [similarity, setSimilarity] =
     useState(80);
 
@@ -681,6 +739,7 @@ export default function SongGenerator() {
 
   const [generatedLyrics, setGeneratedLyrics] =
     useState("");
+
   const [generatedSongTitle, setGeneratedSongTitle] =
     useState("Untitled AI Song");
 
@@ -691,7 +750,9 @@ export default function SongGenerator() {
     useState<SongOutline>(EMPTY_OUTLINE);
 
   const [arrangement, setArrangement] =
-    useState<Arrangement>(EMPTY_ARRANGEMENT);
+    useState<Arrangement>(
+      EMPTY_ARRANGEMENT,
+    );
 
   const [metadata, setMetadata] =
     useState<SongMetadata>(
@@ -706,13 +767,11 @@ export default function SongGenerator() {
       ),
     );
 
-  const [chords, setChords] = useState<{
-    progression: ChordProgression[];
-    formatted: string;
-  }>({
-    progression: [],
-    formatted: "",
-  });
+  const [chords, setChords] =
+    useState<ChordResult>({
+      progression: [],
+      formatted: "",
+    });
 
   const [status, setStatus] =
     useState<GenerationStatus>("idle");
@@ -723,7 +782,8 @@ export default function SongGenerator() {
   const [pipelineStep, setPipelineStep] =
     useState("");
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
   const [copied, setCopied] =
     useState(false);
@@ -738,9 +798,9 @@ export default function SongGenerator() {
     useState(false);
 
   const [speechTarget, setSpeechTarget] =
-    useState<"lyrics" | "outline" | "arrangement">(
-      "lyrics",
-    );
+    useState<
+      "lyrics" | "outline" | "arrangement"
+    >("lyrics");
 
   const [speechRate, setSpeechRate] =
     useState(1);
@@ -758,19 +818,21 @@ export default function SongGenerator() {
 
     setSpeechSupported(true);
 
-    const synthesis = window.speechSynthesis;
+    const synthesis =
+      window.speechSynthesis;
 
-    const updateSpeechState = () => {
+    const updateState = () => {
       setSpeechSpeaking(
         synthesis.speaking,
       );
+
       setSpeechPaused(
         synthesis.paused,
       );
     };
 
     const interval = window.setInterval(
-      updateSpeechState,
+      updateState,
       250,
     );
 
@@ -779,17 +841,6 @@ export default function SongGenerator() {
       synthesis.cancel();
     };
   }, []);
-
-  useEffect(() => {
-    if (
-      status !== "generating" ||
-      progress >= 100
-    ) {
-      return;
-    }
-
-    return undefined;
-  }, [status, progress]);
 
   const outlineText = useMemo(() => {
     return [
@@ -816,37 +867,38 @@ export default function SongGenerator() {
       .join("\n\n");
   }, [songOutline]);
 
-  const arrangementText = useMemo(() => {
-    return [
-      arrangement.intro &&
-        `Intro: ${arrangement.intro}`,
-      arrangement.verse &&
-        `Verse: ${arrangement.verse}`,
-      arrangement.preChorus &&
-        `Pre-Chorus: ${arrangement.preChorus}`,
-      arrangement.chorus &&
-        `Chorus: ${arrangement.chorus}`,
-      arrangement.bridge &&
-        `Bridge: ${arrangement.bridge}`,
-      arrangement.finalChorus &&
-        `Final Chorus: ${arrangement.finalChorus}`,
-      arrangement.outro &&
-        `Outro: ${arrangement.outro}`,
-      arrangement.instruments.length
-        ? `Instruments: ${arrangement.instruments.join(
-            ", ",
-          )}`
-        : "",
-      arrangement.vocalStyle &&
-        `Vocal Style: ${arrangement.vocalStyle}`,
-      arrangement.productionStyle &&
-        `Production Style: ${arrangement.productionStyle}`,
-      arrangement.dynamics &&
-        `Dynamics: ${arrangement.dynamics}`,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-  }, [arrangement]);
+  const arrangementText =
+    useMemo(() => {
+      return [
+        arrangement.intro &&
+          `Intro: ${arrangement.intro}`,
+        arrangement.verse &&
+          `Verse: ${arrangement.verse}`,
+        arrangement.preChorus &&
+          `Pre-Chorus: ${arrangement.preChorus}`,
+        arrangement.chorus &&
+          `Chorus: ${arrangement.chorus}`,
+        arrangement.bridge &&
+          `Bridge: ${arrangement.bridge}`,
+        arrangement.finalChorus &&
+          `Final Chorus: ${arrangement.finalChorus}`,
+        arrangement.outro &&
+          `Outro: ${arrangement.outro}`,
+        arrangement.instruments.length
+          ? `Instruments: ${arrangement.instruments.join(
+              ", ",
+            )}`
+          : "",
+        arrangement.vocalStyle &&
+          `Vocal Style: ${arrangement.vocalStyle}`,
+        arrangement.productionStyle &&
+          `Production Style: ${arrangement.productionStyle}`,
+        arrangement.dynamics &&
+          `Dynamics: ${arrangement.dynamics}`,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+    }, [arrangement]);
 
   const projectJson = useMemo(() => {
     return buildProjectExport(
@@ -902,7 +954,7 @@ export default function SongGenerator() {
     negativePrompt,
   ]);
 
-  function buildSongPrompt() {
+  function buildSongPrompt(): string {
     const finalPrompt =
       prompt.trim() ||
       "Create an original song suitable for the selected settings.";
@@ -923,7 +975,9 @@ Tempo: ${tempo} BPM
 Musical Key: ${musicalKey}
 Singer: ${singer}
 Instrumental: ${instrumental ? "Yes" : "No"}
-Explicit Lyrics Allowed: ${explicitLyrics ? "Yes" : "No"}
+Explicit Lyrics Allowed: ${
+      explicitLyrics ? "Yes" : "No"
+    }
 High Quality: ${highQuality ? "Yes" : "No"}
 Creativity: ${creativity}%
 Similarity: ${similarity}%
@@ -932,7 +986,7 @@ NEGATIVE PROMPT:
 ${negativePrompt.trim() || "None"}
 
 Return ONLY valid JSON.
-Do not wrap the JSON in markdown.
+Do not use markdown fences.
 Do not add explanations before or after the JSON.
 
 Use exactly this structure:
@@ -983,19 +1037,19 @@ Use exactly this structure:
   }
 }
 
-LYRICS REQUIREMENTS:
-- Write original lyrics.
-- Write lyrics in ${language}.
-- Use clear sections such as [Verse 1], [Pre-Chorus], [Chorus], [Verse 2], [Bridge], [Final Chorus], [Outro].
-- If Instrumental is Yes, lyrics may be empty and the arrangement must focus on instrumentation.
+LYRICS:
+- Original lyrics only.
+- Language: ${language}.
+- Use [Verse 1], [Pre-Chorus], [Chorus], [Verse 2], [Bridge], [Final Chorus], [Outro].
+- If Instrumental is Yes, lyrics can be empty.
 - Do not imitate a living artist.
 - Do not reproduce existing copyrighted lyrics.
 
-OUTLINE REQUIREMENTS:
-Describe the actual structure of this song, not generic advice.
+OUTLINE:
+Describe the actual structure of this song.
 
-ARRANGEMENT REQUIREMENTS:
-Describe what instruments and production elements should occur in each section.
+ARRANGEMENT:
+Describe instruments and production elements in each section.
 `.trim();
   }
 
@@ -1011,24 +1065,27 @@ Describe what instruments and production elements should occur in each section.
     setCopied(false);
     setStatus("preparing");
     setProgress(5);
-    setPipelineStep("Preparing song request");
+    setPipelineStep(
+      "Preparing song request",
+    );
 
     try {
-      const defaults = createDefaultMetadata(
-        genre,
-        mood,
-        language,
-        duration,
-        tempo,
-        musicalKey,
-        singer,
-      );
+      const defaults =
+        createDefaultMetadata(
+          genre,
+          mood,
+          language,
+          duration,
+          tempo,
+          musicalKey,
+          singer,
+        );
 
+      setStatus("generating");
+      setProgress(15);
       setPipelineStep(
         "Generating lyrics, outline, arrangement and metadata",
       );
-      setProgress(15);
-      setStatus("generating");
 
       const aiText = await callAI(
         buildSongPrompt(),
@@ -1040,7 +1097,8 @@ Describe what instruments and production elements should occur in each section.
         "Parsing AI song package",
       );
 
-      const parsed = parseJsonFromAI(aiText);
+      const parsed =
+        parseJsonFromAI(aiText);
 
       if (!parsed) {
         throw new Error(
@@ -1048,10 +1106,11 @@ Describe what instruments and production elements should occur in each section.
         );
       }
 
-      const song = normalizeSongPackage(
-        parsed,
-        defaults,
-      );
+      const song =
+        normalizeSongPackage(
+          parsed,
+          defaults,
+        );
 
       if (
         !song.lyrics &&
@@ -1062,24 +1121,41 @@ Describe what instruments and production elements should occur in each section.
         );
       }
 
-      setGeneratedSongTitle(song.title);
+      setGeneratedSongTitle(
+        song.title,
+      );
+
       setSongDescription(
         song.description,
       );
-      setGeneratedLyrics(song.lyrics);
-      setSongOutline(song.outline);
-      setArrangement(song.arrangement);
-      setMetadata(song.metadata);
+
+      setGeneratedLyrics(
+        song.lyrics,
+      );
+
+      setSongOutline(
+        song.outline,
+      );
+
+      setArrangement(
+        song.arrangement,
+      );
+
+      setMetadata(
+        song.metadata,
+      );
 
       setPipelineStep(
         "Generating chord progression",
       );
+
       setProgress(75);
 
-      const chordResult = await fetchChords(
-        musicalKey,
-        mood,
-      );
+      const chordResult =
+        await fetchChords(
+          musicalKey,
+          mood,
+        );
 
       setChords(chordResult);
 
@@ -1087,6 +1163,7 @@ Describe what instruments and production elements should occur in each section.
       setPipelineStep(
         "Song package completed",
       );
+
       setStatus("completed");
     } catch (err) {
       console.error(
@@ -1128,6 +1205,18 @@ Describe what instruments and production elements should occur in each section.
     }
   }
 
+  function getSpeechText(): string {
+    if (speechTarget === "lyrics") {
+      return generatedLyrics;
+    }
+
+    if (speechTarget === "outline") {
+      return outlineText;
+    }
+
+    return arrangementText;
+  }
+
   function speakCurrentTarget() {
     if (
       !speechSupported ||
@@ -1139,18 +1228,7 @@ Describe what instruments and production elements should occur in each section.
       return;
     }
 
-    const synthesis =
-      window.speechSynthesis;
-
-    let text = "";
-
-    if (speechTarget === "lyrics") {
-      text = generatedLyrics;
-    } else if (speechTarget === "outline") {
-      text = outlineText;
-    } else {
-      text = arrangementText;
-    }
+    const text = getSpeechText();
 
     if (!text.trim()) {
       setError(
@@ -1158,6 +1236,9 @@ Describe what instruments and production elements should occur in each section.
       );
       return;
     }
+
+    const synthesis =
+      window.speechSynthesis;
 
     synthesis.cancel();
 
@@ -1245,7 +1326,9 @@ Describe what instruments and production elements should occur in each section.
     setSpeechPaused(false);
   }
 
-  function applySuggestion(value: string) {
+  function applySuggestion(
+    value: string,
+  ) {
     setPrompt((current) => {
       const trimmed = current.trim();
 
@@ -1257,56 +1340,21 @@ Describe what instruments and production elements should occur in each section.
     });
   }
 
-  function handleKeyboardShortcut(
-    event: React.KeyboardEvent,
-  ) {
-    if (
-      event.ctrlKey &&
-      event.key.toLowerCase() === "enter"
-    ) {
-      event.preventDefault();
-      void generateSong();
-    }
-
-    if (
-      event.ctrlKey &&
-      event.key.toLowerCase() === "l"
-    ) {
-      event.preventDefault();
-
-      if (generatedLyrics) {
-        void copyText(generatedLyrics);
-      }
-    }
-
-    if (
-      event.ctrlKey &&
-      event.key.toLowerCase() === "p"
-    ) {
-      event.preventDefault();
-
-      if (speechSpeaking) {
-        if (speechPaused) {
-          resumeSpeech();
-        } else {
-          pauseSpeech();
-        }
-      } else {
-        speakCurrentTarget();
-      }
-    }
-  }
-
   function exportCurrent(
     format: string,
   ) {
     const safeTitle =
       generatedSongTitle
-        .replace(/[^\w\-]+/g, "_")
+        .replace(
+          /[^\w\-]+/g,
+          "_",
+        )
         .slice(0, 80) ||
       "ai-song";
 
-    if (format === "Lyrics (.txt)") {
+    if (
+      format === "Lyrics (.txt)"
+    ) {
       downloadText(
         `${safeTitle}-lyrics.txt`,
         generatedLyrics,
@@ -1314,7 +1362,9 @@ Describe what instruments and production elements should occur in each section.
       return;
     }
 
-    if (format === "Outline (.txt)") {
+    if (
+      format === "Outline (.txt)"
+    ) {
       downloadText(
         `${safeTitle}-outline.txt`,
         outlineText,
@@ -1322,7 +1372,10 @@ Describe what instruments and production elements should occur in each section.
       return;
     }
 
-    if (format === "Arrangement (.txt)") {
+    if (
+      format ===
+      "Arrangement (.txt)"
+    ) {
       downloadText(
         `${safeTitle}-arrangement.txt`,
         arrangementText,
@@ -1330,7 +1383,9 @@ Describe what instruments and production elements should occur in each section.
       return;
     }
 
-    if (format === "Project (.json)") {
+    if (
+      format === "Project (.json)"
+    ) {
       downloadText(
         `${safeTitle}-project.json`,
         projectJson,
@@ -1340,10 +1395,7 @@ Describe what instruments and production elements should occur in each section.
   }
 
   return (
-    <div
-      className="space-y-8"
-      onKeyDown={handleKeyboardShortcut}
-    >
+    <div className="space-y-8">
       <div>
         <h1 className="text-5xl font-black">
           AI Song Generator
@@ -1351,8 +1403,8 @@ Describe what instruments and production elements should occur in each section.
 
         <p className="mt-3 text-lg text-muted-foreground">
           Generate lyrics, song structure,
-          arrangement, chords and metadata from
-          one song request.
+          arrangement, chords and metadata
+          from one song request.
         </p>
       </div>
 
@@ -1365,7 +1417,7 @@ Describe what instruments and production elements should occur in each section.
               AI Generation Error
             </p>
 
-            <p className="mt-1 text-sm whitespace-pre-wrap">
+            <p className="mt-1 whitespace-pre-wrap text-sm">
               {error}
             </p>
           </div>
@@ -1394,7 +1446,9 @@ Describe what instruments and production elements should occur in each section.
             <textarea
               value={prompt}
               onChange={(event) =>
-                setPrompt(event.target.value)
+                setPrompt(
+                  event.target.value,
+                )
               }
               placeholder="Example: Create an emotional Telugu melody about friendship with piano, violin and a cinematic chorus..."
               className="min-h-[220px] w-full rounded-2xl border border-white/10 bg-background p-6 text-lg outline-none focus:border-violet-500/50"
@@ -1480,7 +1534,9 @@ Describe what instruments and production elements should occur in each section.
                     Duration
                   </span>
 
-                  <span>{duration}s</span>
+                  <span>
+                    {duration}s
+                  </span>
                 </label>
 
                 <input
@@ -1490,7 +1546,9 @@ Describe what instruments and production elements should occur in each section.
                   value={duration}
                   onChange={(event) =>
                     setDuration(
-                      Number(event.target.value),
+                      Number(
+                        event.target.value,
+                      ),
                     )
                   }
                   className="w-full"
@@ -1501,34 +1559,50 @@ Describe what instruments and production elements should occur in each section.
                 title="Instrumental"
                 description="Generate music without vocals"
                 checked={instrumental}
-                onChange={setInstrumental}
+                onChange={
+                  setInstrumental
+                }
               />
 
               <ToggleField
                 title="Explicit Lyrics"
                 description="Allow mature content"
-                checked={explicitLyrics}
-                onChange={setExplicitLyrics}
+                checked={
+                  explicitLyrics
+                }
+                onChange={
+                  setExplicitLyrics
+                }
               />
 
               <ToggleField
                 title="High Quality"
                 description="Use higher generation quality"
-                checked={highQuality}
-                onChange={setHighQuality}
+                checked={
+                  highQuality
+                }
+                onChange={
+                  setHighQuality
+                }
               />
 
               <button
                 type="button"
-                onClick={() => void generateSong()}
+                onClick={() =>
+                  void generateSong()
+                }
                 disabled={
-                  status === "generating" ||
-                  status === "preparing"
+                  status ===
+                    "generating" ||
+                  status ===
+                    "preparing"
                 }
                 className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 py-5 text-lg font-bold text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {status === "generating" ||
-                status === "preparing" ? (
+                {status ===
+                    "generating" ||
+                status ===
+                    "preparing" ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" />
                     Generating...
@@ -1553,7 +1627,8 @@ Describe what instruments and production elements should occur in each section.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Fine tune the generated song.
+              Fine tune the generated
+              song.
             </p>
           </div>
 
@@ -1574,8 +1649,9 @@ Describe what instruments and production elements should occur in each section.
                       240,
                       Math.max(
                         40,
-                        Number(event.target.value) ||
-                          40,
+                        Number(
+                          event.target.value,
+                        ) || 40,
                       ),
                     ),
                   )
@@ -1587,7 +1663,9 @@ Describe what instruments and production elements should occur in each section.
             <SelectField
               label="Musical Key"
               value={musicalKey}
-              onChange={setMusicalKey}
+              onChange={
+                setMusicalKey
+              }
               options={musicalKeys}
             />
 
@@ -1601,13 +1679,17 @@ Describe what instruments and production elements should occur in each section.
             <RangeField
               label="Creativity"
               value={creativity}
-              onChange={setCreativity}
+              onChange={
+                setCreativity
+              }
             />
 
             <RangeField
               label="Similarity"
               value={similarity}
-              onChange={setSimilarity}
+              onChange={
+                setSimilarity
+              }
             />
           </div>
         </div>
@@ -1640,12 +1722,25 @@ Describe what instruments and production elements should occur in each section.
             </h3>
 
             <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <li>• Lyrics generation</li>
-              <li>• Song outline generation</li>
-              <li>• Arrangement generation</li>
-              <li>• Metadata generation</li>
-              <li>• Chord progression generation</li>
-              <li>• Browser TTS preview</li>
+              <li>
+                • Lyrics generation
+              </li>
+              <li>
+                • Song outline generation
+              </li>
+              <li>
+                • Arrangement generation
+              </li>
+              <li>
+                • Metadata generation
+              </li>
+              <li>
+                • Chord progression
+                generation
+              </li>
+              <li>
+                • Browser TTS preview
+              </li>
             </ul>
           </div>
         </div>
@@ -1659,7 +1754,8 @@ Describe what instruments and production elements should occur in each section.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Real pipeline progress based on completed API steps.
+              Progress is based on completed
+              pipeline stages.
             </p>
           </div>
 
@@ -1672,13 +1768,16 @@ Describe what instruments and production elements should occur in each section.
                 : "bg-violet-500/10 text-violet-400"
             }`}
           >
-            {status === "completed"
+            {status ===
+            "completed"
               ? "Completed"
               : status === "error"
               ? "Error"
-              : status === "generating"
+              : status ===
+                "generating"
               ? "Generating"
-              : status === "preparing"
+              : status ===
+                "preparing"
               ? "Preparing"
               : "Ready"}
           </div>
@@ -1687,14 +1786,18 @@ Describe what instruments and production elements should occur in each section.
         {pipelineStep && (
           <div className="mb-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
             <div className="flex items-center gap-3">
-              {status === "generating" ||
-              status === "preparing" ? (
+              {status ===
+                  "generating" ||
+              status ===
+                  "preparing" ? (
                 <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
               ) : (
                 <Check className="h-5 w-5 text-green-400" />
               )}
 
-              <span>{pipelineStep}</span>
+              <span>
+                {pipelineStep}
+              </span>
             </div>
           </div>
         )}
@@ -1705,11 +1808,10 @@ Describe what instruments and production elements should occur in each section.
             progress >= 65
               ? 100
               : progress >= 15
-              ? Math.min(
-                  100,
-                  Math.round(
-                    ((progress - 15) / 50) * 100,
-                  ),
+              ? Math.round(
+                  ((progress - 15) /
+                    50) *
+                    100,
                 )
               : 0
           }
@@ -1722,11 +1824,10 @@ Describe what instruments and production elements should occur in each section.
               progress >= 100
                 ? 100
                 : progress >= 75
-                ? Math.min(
-                    100,
-                    Math.round(
-                      ((progress - 75) / 25) * 100,
-                    ),
+                ? Math.round(
+                    ((progress - 75) /
+                      25) *
+                      100,
                   )
                 : 0
             }
@@ -1737,7 +1838,9 @@ Describe what instruments and production elements should occur in each section.
       <div className="grid gap-8 lg:grid-cols-3">
         <StatCard
           title="Song Duration"
-          value={formatDuration(duration)}
+          value={formatDuration(
+            duration,
+          )}
           description="Requested duration"
           className="text-violet-400"
         />
@@ -1793,8 +1896,12 @@ Describe what instruments and production elements should occur in each section.
                     metadata.durationSeconds ||
                       duration,
                   )}{" "}
-                  • {metadata.key || musicalKey} •{" "}
-                  {metadata.timeSignature || "4/4"}
+                  •{" "}
+                  {metadata.key ||
+                    musicalKey}{" "}
+                  •{" "}
+                  {metadata.timeSignature ||
+                    "4/4"}
                 </p>
               </div>
             </div>
@@ -1811,9 +1918,13 @@ Describe what instruments and production elements should occur in each section.
               <button
                 type="button"
                 onClick={() =>
-                  void copyText(generatedLyrics)
+                  void copyText(
+                    generatedLyrics,
+                  )
                 }
-                disabled={!generatedLyrics}
+                disabled={
+                  !generatedLyrics
+                }
                 className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {copied ? (
@@ -1827,9 +1938,14 @@ Describe what instruments and production elements should occur in each section.
               <button
                 type="button"
                 onClick={() =>
-                  exportCurrent("Project (.json)")
+                  exportCurrent(
+                    "Project (.json)",
+                  )
                 }
-                disabled={status !== "completed"}
+                disabled={
+                  status !==
+                  "completed"
+                }
                 className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 py-4 font-semibold disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Export Project
@@ -1848,43 +1964,49 @@ Describe what instruments and production elements should occur in each section.
               </h2>
 
               <p className="mt-1 text-sm text-muted-foreground">
-                Browser text-to-speech. This does not create an audio file.
+                Browser text-to-speech preview.
               </p>
             </div>
           </div>
 
           {!speechSupported && (
             <div className="mb-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-300">
-              Text-to-speech is not available in this browser.
+              Text-to-speech is not
+              available in this browser.
             </div>
           )}
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              ["lyrics", "Lyrics"],
-              ["outline", "Outline"],
-              ["arrangement", "Arrangement"],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() =>
-                  setSpeechTarget(
-                    value as
-                      | "lyrics"
-                      | "outline"
-                      | "arrangement",
-                  )
-                }
-                className={`rounded-xl border p-3 text-sm font-semibold ${
-                  speechTarget === value
-                    ? "border-violet-500 bg-violet-500/10 text-violet-300"
-                    : "border-white/10"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {(
+              [
+                ["lyrics", "Lyrics"],
+                ["outline", "Outline"],
+                [
+                  "arrangement",
+                  "Arrangement",
+                ],
+              ] as const
+            ).map(
+              ([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() =>
+                    setSpeechTarget(
+                      value,
+                    )
+                  }
+                  className={`rounded-xl border p-3 text-sm font-semibold ${
+                    speechTarget ===
+                    value
+                      ? "border-violet-500 bg-violet-500/10 text-violet-300"
+                      : "border-white/10"
+                  }`}
+                >
+                  {label}
+                </button>
+              ),
+            )}
           </div>
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -1894,7 +2016,9 @@ Describe what instruments and production elements should occur in each section.
               min={0.5}
               max={1.5}
               step={0.1}
-              onChange={setSpeechRate}
+              onChange={
+                setSpeechRate
+              }
             />
 
             <RangeNumberField
@@ -1903,7 +2027,9 @@ Describe what instruments and production elements should occur in each section.
               min={0}
               max={2}
               step={0.1}
-              onChange={setSpeechPitch}
+              onChange={
+                setSpeechPitch
+              }
             />
           </div>
 
@@ -1911,8 +2037,12 @@ Describe what instruments and production elements should occur in each section.
             {!speechSpeaking && (
               <button
                 type="button"
-                onClick={speakCurrentTarget}
-                disabled={!speechSupported}
+                onClick={
+                  speakCurrentTarget
+                }
+                disabled={
+                  !speechSupported
+                }
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 py-3 font-semibold disabled:opacity-40"
               >
                 <Play className="h-4 w-4" />
@@ -1924,7 +2054,9 @@ Describe what instruments and production elements should occur in each section.
               !speechPaused && (
                 <button
                   type="button"
-                  onClick={pauseSpeech}
+                  onClick={
+                    pauseSpeech
+                  }
                   className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 font-semibold"
                 >
                   <Pause className="h-4 w-4" />
@@ -1936,7 +2068,9 @@ Describe what instruments and production elements should occur in each section.
               speechPaused && (
                 <button
                   type="button"
-                  onClick={resumeSpeech}
+                  onClick={
+                    resumeSpeech
+                  }
                   className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 font-semibold"
                 >
                   <Play className="h-4 w-4" />
@@ -1947,7 +2081,9 @@ Describe what instruments and production elements should occur in each section.
             {speechSpeaking && (
               <button
                 type="button"
-                onClick={stopSpeech}
+                onClick={
+                  stopSpeech
+                }
                 className="flex items-center gap-2 rounded-xl border border-red-500/20 px-5 py-3 font-semibold text-red-300"
               >
                 <Square className="h-4 w-4" />
@@ -1986,12 +2122,18 @@ Describe what instruments and production elements should occur in each section.
           )}
 
           <ContentActions
-            hasContent={Boolean(outlineText)}
+            hasContent={Boolean(
+              outlineText,
+            )}
             onCopy={() =>
-              void copyText(outlineText)
+              void copyText(
+                outlineText,
+              )
             }
             onDownload={() =>
-              exportCurrent("Outline (.txt)")
+              exportCurrent(
+                "Outline (.txt)",
+              )
             }
           />
         </ContentCard>
@@ -2012,12 +2154,18 @@ Describe what instruments and production elements should occur in each section.
           )}
 
           <ContentActions
-            hasContent={Boolean(arrangementText)}
+            hasContent={Boolean(
+              arrangementText,
+            )}
             onCopy={() =>
-              void copyText(arrangementText)
+              void copyText(
+                arrangementText,
+              )
             }
             onDownload={() =>
-              exportCurrent("Arrangement (.txt)")
+              exportCurrent(
+                "Arrangement (.txt)",
+              )
             }
           />
         </ContentCard>
@@ -2032,7 +2180,8 @@ Describe what instruments and production elements should occur in each section.
               </h2>
 
               <p className="mt-2 text-muted-foreground">
-                Generated by the existing chord progression API.
+                Generated by the existing
+                chord API.
               </p>
             </div>
 
@@ -2045,10 +2194,14 @@ Describe what instruments and production elements should occur in each section.
                 {chords.formatted}
               </p>
             </div>
-          ) : chords.progression.length ? (
+          ) : chords.progression
+              .length ? (
             <div className="space-y-4">
               {chords.progression.map(
-                (item, index) => (
+                (
+                  item,
+                  index,
+                ) => (
                   <div
                     key={index}
                     className="rounded-2xl border border-white/10 p-5"
@@ -2057,7 +2210,10 @@ Describe what instruments and production elements should occur in each section.
                       {normalizeStringArray(
                         item.chords,
                       ).map(
-                        (chord, chordIndex) => (
+                        (
+                          chord,
+                          chordIndex,
+                        ) => (
                           <span
                             key={`${chord}-${chordIndex}`}
                             className="rounded-xl bg-violet-500/10 px-4 py-2 font-bold text-violet-300"
@@ -2091,7 +2247,8 @@ Describe what instruments and production elements should occur in each section.
                   setChords(result);
                 } catch (err) {
                   setError(
-                    err instanceof Error
+                    err instanceof
+                      Error
                       ? err.message
                       : "Unable to refresh chords.",
                   );
@@ -2115,7 +2272,8 @@ Describe what instruments and production elements should occur in each section.
               </h2>
 
               <p className="mt-1 text-sm text-muted-foreground">
-                Metadata generated together with the song package.
+                Metadata generated with
+                the song package.
               </p>
             </div>
           </div>
@@ -2141,7 +2299,9 @@ Describe what instruments and production elements should occur in each section.
 
             <DetailRow
               label="Language"
-              value={metadata.language}
+              value={
+                metadata.language
+              }
             />
 
             <DetailRow
@@ -2156,7 +2316,9 @@ Describe what instruments and production elements should occur in each section.
 
             <DetailRow
               label="Time Signature"
-              value={metadata.timeSignature}
+              value={
+                metadata.timeSignature
+              }
             />
 
             <DetailRow
@@ -2166,19 +2328,26 @@ Describe what instruments and production elements should occur in each section.
 
             <DetailRow
               label="Vocal Type"
-              value={metadata.vocalType}
+              value={
+                metadata.vocalType
+              }
             />
 
             <DetailRow
               label="Theme"
-              value={metadata.theme || "Not specified"}
+              value={
+                metadata.theme ||
+                "Not specified"
+              }
             />
 
             <DetailRow
               label="Tags"
               value={
                 metadata.tags.length
-                  ? metadata.tags.join(", ")
+                  ? metadata.tags.join(
+                      ", ",
+                    )
                   : "None"
               }
             />
@@ -2194,7 +2363,8 @@ Describe what instruments and production elements should occur in each section.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              AI-generated lyrics from the same song package.
+              AI-generated lyrics from
+              the song package.
             </p>
           </div>
 
@@ -2209,12 +2379,18 @@ Describe what instruments and production elements should occur in each section.
           </div>
 
           <ContentActions
-            hasContent={Boolean(generatedLyrics)}
+            hasContent={Boolean(
+              generatedLyrics,
+            )}
             onCopy={() =>
-              void copyText(generatedLyrics)
+              void copyText(
+                generatedLyrics,
+              )
             }
             onDownload={() =>
-              exportCurrent("Lyrics (.txt)")
+              exportCurrent(
+                "Lyrics (.txt)",
+              )
             }
           />
         </div>
@@ -2226,42 +2402,56 @@ Describe what instruments and production elements should occur in each section.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Export only data that has actually been generated.
+              Export generated song data.
             </p>
           </div>
 
           <div className="space-y-4">
-            {exportFormats.map((format) => {
-              const enabled =
-                format === "Lyrics (.txt)"
-                  ? Boolean(generatedLyrics)
-                  : format === "Outline (.txt)"
-                  ? Boolean(outlineText)
-                  : format === "Arrangement (.txt)"
-                  ? Boolean(arrangementText)
-                  : status === "completed";
+            {exportFormats.map(
+              (format) => {
+                const enabled =
+                  format ===
+                  "Lyrics (.txt)"
+                    ? Boolean(
+                        generatedLyrics,
+                      )
+                    : format ===
+                      "Outline (.txt)"
+                    ? Boolean(
+                        outlineText,
+                      )
+                    : format ===
+                      "Arrangement (.txt)"
+                    ? Boolean(
+                        arrangementText,
+                      )
+                    : status ===
+                      "completed";
 
-              return (
-                <button
-                  key={format}
-                  type="button"
-                  disabled={!enabled}
-                  onClick={() =>
-                    exportCurrent(format)
-                  }
-                  className="flex w-full items-center justify-between rounded-2xl border border-white/10 p-5 transition hover:border-violet-500 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span className="flex items-center gap-3">
-                    <FileText className="h-5 w-5" />
-                    {format}
-                  </span>
+                return (
+                  <button
+                    key={format}
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() =>
+                      exportCurrent(
+                        format,
+                      )
+                    }
+                    className="flex w-full items-center justify-between rounded-2xl border border-white/10 p-5 transition hover:border-violet-500 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <span className="flex items-center gap-3">
+                      <FileText className="h-5 w-5" />
+                      {format}
+                    </span>
 
-                  <span className="text-violet-400">
-                    Export
-                  </span>
-                </button>
-              );
-            })}
+                    <span className="text-violet-400">
+                      Export
+                    </span>
+                  </button>
+                );
+              },
+            )}
           </div>
         </div>
       </div>
@@ -2273,22 +2463,27 @@ Describe what instruments and production elements should occur in each section.
           </h2>
 
           <p className="mt-2 text-muted-foreground">
-            Improve the next generation request.
+            Improve the next generation
+            request.
           </p>
 
           <div className="mt-8 space-y-4">
-            {suggestions.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() =>
-                  applySuggestion(item)
-                }
-                className="w-full rounded-2xl border border-white/10 p-4 text-left transition hover:border-violet-500 hover:bg-white/5"
-              >
-                {item}
-              </button>
-            ))}
+            {suggestions.map(
+              (item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() =>
+                    applySuggestion(
+                      item,
+                    )
+                  }
+                  className="w-full rounded-2xl border border-white/10 p-4 text-left transition hover:border-violet-500 hover:bg-white/5"
+                >
+                  {item}
+                </button>
+              ),
+            )}
           </div>
         </div>
 
@@ -2301,11 +2496,13 @@ Describe what instruments and production elements should occur in each section.
             <DetailRow
               label="Status"
               value={
-                status === "completed"
+                status ===
+                "completed"
                   ? "Completed"
                   : status === "error"
                   ? "Error"
-                  : status === "generating"
+                  : status ===
+                    "generating"
                   ? "Generating"
                   : "Ready"
               }
@@ -2342,7 +2539,8 @@ Describe what instruments and production elements should occur in each section.
               label="Chords"
               value={
                 chords.formatted ||
-                chords.progression.length
+                chords.progression
+                  .length
                   ? "Generated"
                   : "Pending"
               }
@@ -2366,23 +2564,34 @@ Describe what instruments and production elements should occur in each section.
 
           <div className="mt-8 space-y-4">
             {[
-              ["Ctrl + Enter", "Generate Song"],
-              ["Ctrl + L", "Copy Lyrics"],
-              ["Ctrl + P", "Play / Pause TTS"],
-            ].map(([key, action]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between rounded-xl border border-white/10 p-4"
-              >
-                <kbd className="rounded-lg bg-black/30 px-3 py-2 text-sm font-bold">
-                  {key}
-                </kbd>
+              [
+                "Ctrl + Enter",
+                "Generate Song",
+              ],
+              [
+                "Ctrl + L",
+                "Copy Lyrics",
+              ],
+              [
+                "Ctrl + P",
+                "Play / Pause TTS",
+              ],
+            ].map(
+              ([key, action]) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between rounded-xl border border-white/10 p-4"
+                >
+                  <kbd className="rounded-lg bg-black/30 px-3 py-2 text-sm font-bold">
+                    {key}
+                  </kbd>
 
-                <span className="text-right text-sm text-muted-foreground">
-                  {action}
-                </span>
-              </div>
-            ))}
+                  <span className="text-right text-sm text-muted-foreground">
+                    {action}
+                  </span>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -2400,7 +2609,9 @@ function SelectField({
   label: string;
   icon?: React.ReactNode;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string,
+  ) => void;
   options: string[];
 }) {
   return (
@@ -2413,7 +2624,9 @@ function SelectField({
       <select
         value={value}
         onChange={(event) =>
-          onChange(event.target.value)
+          onChange(
+            event.target.value,
+          )
         }
         className="w-full rounded-xl border border-white/10 bg-background p-4"
       >
@@ -2436,7 +2649,9 @@ function ToggleField({
   title: string;
   description: string;
   checked: boolean;
-  onChange: (value: boolean) => void;
+  onChange: (
+    value: boolean,
+  ) => void;
 }) {
   return (
     <label className="flex items-center justify-between rounded-xl border border-white/10 p-4">
@@ -2454,7 +2669,9 @@ function ToggleField({
         type="checkbox"
         checked={checked}
         onChange={(event) =>
-          onChange(event.target.checked)
+          onChange(
+            event.target.checked,
+          )
         }
         className="h-5 w-5"
       />
@@ -2469,12 +2686,15 @@ function RangeField({
 }: {
   label: string;
   value: number;
-  onChange: (value: number) => void;
+  onChange: (
+    value: number,
+  ) => void;
 }) {
   return (
     <div>
       <label className="mb-3 flex justify-between font-semibold">
         <span>{label}</span>
+
         <span>{value}%</span>
       </label>
 
@@ -2485,7 +2705,9 @@ function RangeField({
         value={value}
         onChange={(event) =>
           onChange(
-            Number(event.target.value),
+            Number(
+              event.target.value,
+            ),
           )
         }
         className="w-full"
@@ -2507,13 +2729,18 @@ function RangeNumberField({
   min: number;
   max: number;
   step: number;
-  onChange: (value: number) => void;
+  onChange: (
+    value: number,
+  ) => void;
 }) {
   return (
     <div>
       <label className="mb-3 flex justify-between font-semibold">
         <span>{label}</span>
-        <span>{value.toFixed(1)}</span>
+
+        <span>
+          {value.toFixed(1)}
+        </span>
       </label>
 
       <input
@@ -2524,7 +2751,9 @@ function RangeNumberField({
         value={value}
         onChange={(event) =>
           onChange(
-            Number(event.target.value),
+            Number(
+              event.target.value,
+            ),
           )
         }
         className="w-full"
@@ -2540,10 +2769,11 @@ function ProgressRow({
   title: string;
   value: number;
 }) {
-  const safeValue = Math.min(
-    100,
-    Math.max(0, value),
-  );
+  const safeValue =
+    Math.min(
+      100,
+      Math.max(0, value),
+    );
 
   return (
     <div>
@@ -2551,7 +2781,10 @@ function ProgressRow({
         <span>{title}</span>
 
         <span>
-          {Math.round(safeValue)}%
+          {Math.round(
+            safeValue,
+          )}
+          %
         </span>
       </div>
 
