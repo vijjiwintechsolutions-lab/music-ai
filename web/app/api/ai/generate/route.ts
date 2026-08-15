@@ -9,11 +9,9 @@ export const dynamic = "force-dynamic";
 
 interface GenerateBody {
   prompt?: unknown;
-  system?: unknown;
-  model?: unknown;
+  provider?: unknown;
   temperature?: unknown;
   maxTokens?: unknown;
-  tools?: unknown;
 }
 
 function getString(
@@ -43,6 +41,21 @@ function clamp(
   max: number,
 ): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function isProvider(
+  value: string | undefined,
+): value is
+  | "openai"
+  | "anthropic"
+  | "gemini"
+  | "huggingface" {
+  return (
+    value === "openai" ||
+    value === "anthropic" ||
+    value === "gemini" ||
+    value === "huggingface"
+  );
 }
 
 export async function POST(
@@ -90,8 +103,15 @@ export async function POST(
       );
     }
 
-    const system = getString(body.system);
-    const model = getString(body.model);
+    const providerValue = getString(
+      body.provider,
+    );
+
+    const provider = isProvider(
+      providerValue,
+    )
+      ? providerValue
+      : undefined;
 
     const requestedTemperature =
       getNumber(body.temperature);
@@ -119,24 +139,12 @@ export async function POST(
             ),
           );
 
-    let tools: string[] | undefined;
-
-    if (Array.isArray(body.tools)) {
-      tools = body.tools.filter(
-        (tool): tool is string =>
-          typeof tool === "string" &&
-          tool.trim().length > 0,
-      );
-    }
-
     const result =
       await routeAIGeneration({
         prompt,
-        ...(system ? { system } : {}),
-        ...(model ? { model } : {}),
+        ...(provider ? { provider } : {}),
         temperature,
         maxTokens,
-        ...(tools?.length ? { tools } : {}),
       });
 
     return NextResponse.json(
