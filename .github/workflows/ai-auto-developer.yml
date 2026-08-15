@@ -1,0 +1,222 @@
+name: AI Auto Developer
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  checks: read
+  deployments: read
+
+concurrency:
+  group: ai-auto-developer-main
+  cancel-in-progress: false
+
+env:
+  WORKDIR: web
+  MAX_ATTEMPTS: "3"
+  OPENAI_MODEL: gpt-4.1
+
+jobs:
+  auto-developer:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !contains(github.event.head_commit.message, '[ai-auto]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Check required secret
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY GitHub Actions secret is required for autonomous AI fixes."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        working-directory: ${{ env.WORKDIR }}
+        run: npm install --legacy-peer-deps
+
+      - name: Autonomous build / diagnose / fix loop
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || env.OPENAI_MODEL }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          attempt=1
+          while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
+            echo "===== AI AUTO ATTEMPT $attempt/$MAX_ATTEMPTS ====="
+
+            set +e
+            npm run build --prefix "$WORKDIR" > /tmp/music-ai-build.log 2>&1
+            build_code=$?
+            set -e
+
+            if [ "$build_code" -eq 0 ]; then
+              echo "LOCAL_BUILD=PASS"
+              exit 0
+            fi
+
+            echo "LOCAL_BUILD=FAIL"
+            tail -n 250 /tmp/music-ai-build.log
+
+            if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
+              echo "Maximum autonomous repair attempts reached."
+              exit "$build_code"
+            fi
+
+            echo "Collecting relevant source context..."
+            rm -f /tmp/music-ai-context.txt
+            {
+              echo "# Repository: $GITHUB_REPOSITORY"
+              echo "# Commit: $GITHUB_SHA"
+              echo "# Build failure:"
+              tail -n 250 /tmp/music-ai-build.log
+              echo
+              echo "# Relevant source files:"
+              find "$WORKDIR/app" "$WORKDIR/lib" "$WORKDIR/components" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.mts' -o -name '*.mjs' -o -name '*.json' \) -not -path '*/node_modules/*' | sort | while read -r f; do
+                size=$(wc -c < "$f" | tr -d ' ')
+                if [ "$size" -le 30000 ]; then
+                  echo
+                  echo "===== $f ====="
+                  cat "$f"
+                fi
+              done
+            } > /tmp/music-ai-context.txt
+
+            python - <<'PY'
+import json, os
+from pathlib import Path
+
+context = Path('/tmp/music-ai-context.txt').read_text(errors='replace')
+if len(context) > 180000:
+    context = context[-180000:]
+
+prompt = f'''You are the repair agent for a real Next.js/TypeScript repository.
+
+Your job is ONLY to fix the current build failure.
+Do not redesign the application.
+Do not remove working features.
+Do not add dependencies unless absolutely necessary.
+Do not change secrets or environment values.
+Do not modify GitHub workflow files.
+Never introduce fake APIs or pretend a feature works.
+
+Return ONLY a unified git diff that can be applied with `git apply`.
+The diff must contain only files that need changing.
+If no safe patch can fix the error, return exactly: NO_SAFE_PATCH
+
+BUILD + SOURCE CONTEXT:
+{context}
+'''
+Path('/tmp/music-ai-prompt.json').write_text(json.dumps({
+    'model': os.environ.get('OPENAI_MODEL', 'gpt-4.1'),
+    'input': prompt,
+    'max_output_tokens': 12000,
+}))
+PY
+
+            curl -fsS https://api.openai.com/v1/responses \
+              -H "Authorization: Bearer $OPENAI_API_KEY" \
+              -H "Content-Type: application/json" \
+              --data-binary @/tmp/music-ai-prompt.json \
+              > /tmp/music-ai-openai.json
+
+            python - <<'PY'
+import json
+from pathlib import Path
+
+data = json.loads(Path('/tmp/music-ai-openai.json').read_text())
+texts = []
+for item in data.get('output', []):
+    for content in item.get('content', []):
+        if content.get('type') == 'output_text' and isinstance(content.get('text'), str):
+            texts.append(content['text'])
+text = '\n'.join(texts).strip()
+if not text:
+    text = data.get('output_text', '') or ''
+Path('/tmp/music-ai.patch').write_text(text)
+PY
+
+            if grep -q '^NO_SAFE_PATCH$' /tmp/music-ai.patch; then
+              echo "AI returned NO_SAFE_PATCH"
+              exit "$build_code"
+            fi
+
+            sed -n '/^diff --git /,$p' /tmp/music-ai.patch > /tmp/music-ai-clean.patch
+            if [ ! -s /tmp/music-ai-clean.patch ]; then
+              echo "AI did not return an applicable unified diff."
+              cat /tmp/music-ai.patch
+              exit "$build_code"
+            fi
+
+            git apply --check /tmp/music-ai-clean.patch
+            git apply /tmp/music-ai-clean.patch
+
+            if git diff --quiet; then
+              echo "AI patch produced no repository changes."
+              exit "$build_code"
+            fi
+
+            git diff --check
+            git status --short
+
+            git add -A
+            git commit -m "fix: autonomous AI build repair [ai-auto]"
+            git push origin HEAD:main
+
+            echo "AI repair committed and pushed. Vercel Git integration will deploy the new main commit."
+            attempt=$((attempt + 1))
+          done
+
+      - name: Wait for Vercel Git deployment check
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          echo "Waiting for Vercel checks for $sha"
+
+          for i in $(seq 1 40); do
+            checks=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100")
+            vercel=$(echo "$checks" | jq -r '.check_runs[] | select((.name // "") | test("vercel"; "i")) | [.name, .status, (.conclusion // ""), .html_url] | @tsv' | head -n 1 || true)
+
+            if [ -n "$vercel" ]; then
+              echo "Vercel check: $vercel"
+              status=$(echo "$vercel" | awk -F '\t' '{print $2}')
+              conclusion=$(echo "$vercel" | awk -F '\t' '{print $3}')
+              if [ "$status" = "completed" ]; then
+                if [ "$conclusion" = "success" ]; then
+                  echo "VERCEL=PASS"
+                  exit 0
+                fi
+                echo "VERCEL=FAIL"
+                exit 1
+              fi
+            else
+              echo "Vercel check not visible yet; waiting..."
+            fi
+            sleep 15
+          done
+
+          echo "Vercel check did not become visible within the wait window."
+          exit 0
