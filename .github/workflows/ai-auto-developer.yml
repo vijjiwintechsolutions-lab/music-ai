@@ -2,7 +2,8 @@ name: AI Auto Developer
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -23,28 +24,18 @@ jobs:
   auto-developer:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-
     steps:
-      - name: Ignore commits created by this workflow
-        if: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[ai-auto]') }}
-        run: |
-          echo "This commit was created by AI Auto Developer. No recursive workflow run is needed."
-          exit 0
-
       - name: Checkout main
-        if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[ai-auto]') }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Configure Git
-        if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[ai-auto]') }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Verify OpenAI secret
-        if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[ai-auto]') }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
@@ -52,12 +43,10 @@ jobs:
           echo "OPENAI_API_KEY=present"
 
       - name: Install dependencies
-        if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[ai-auto]') }}
         working-directory: ${{ env.WORKDIR }}
         run: npm install --legacy-peer-deps
 
       - name: Build, diagnose, repair and rebuild
-        if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[ai-auto]') }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || env.OPENAI_MODEL }}
@@ -88,25 +77,20 @@ jobs:
 import json, os
 from pathlib import Path
 
-root = Path(os.environ['WORKDIR'])
-parts = ['# BUILD ERROR\n', Path('/tmp/music-ai-build.log').read_text(errors='replace')[-30000:]]
-files = []
-for base in [root/'app', root/'lib', root/'components']:
+root = Path(os.environ["WORKDIR"])
+parts = ["# BUILD ERROR\n", Path("/tmp/music-ai-build.log").read_text(errors="replace")[-30000:]]
+for base in [root / "app", root / "lib", root / "components"]:
     if not base.exists():
         continue
-    for p in sorted(base.rglob('*')):
-        if p.is_file() and p.suffix in {'.ts','.tsx','.mts','.mjs','.json'} and 'node_modules' not in p.parts:
+    for p in sorted(base.rglob("*")):
+        if p.is_file() and p.suffix in {".ts", ".tsx", ".mts", ".mjs", ".json"} and "node_modules" not in p.parts:
             try:
                 if p.stat().st_size <= 20000:
-                    files.append(p)
+                    parts.append(f"\n===== {p.as_posix()} =====\n")
+                    parts.append(p.read_text(errors="replace"))
             except OSError:
                 pass
-for p in files:
-    parts.append(f'\n===== {p.as_posix()} =====\n')
-    parts.append(p.read_text(errors='replace'))
-context = ''.join(parts)
-context = context[-150000:]
-
+context = "".join(parts)[-150000:]
 prompt = f'''You are the repair agent for a real Next.js 14 / TypeScript repository.
 Fix ONLY the current build failure shown below.
 Do not redesign the app.
@@ -114,14 +98,14 @@ Do not remove working features.
 Do not add dependencies unless absolutely required.
 Do not modify .github/workflows files.
 Do not invent APIs or pretend unavailable services work.
-Return ONLY a unified git diff suitable for `git apply`.
+Return ONLY a unified git diff suitable for git apply.
 If no safe fix exists, return exactly NO_SAFE_PATCH.
 
 {context}'''
-Path('/tmp/openai-request.json').write_text(json.dumps({
-    'model': os.environ.get('OPENAI_MODEL','gpt-4.1'),
-    'input': prompt,
-    'max_output_tokens': 12000,
+Path("/tmp/openai-request.json").write_text(json.dumps({
+    "model": os.environ.get("OPENAI_MODEL", "gpt-4.1"),
+    "input": prompt,
+    "max_output_tokens": 12000,
 }))
 PY
 
@@ -134,17 +118,17 @@ PY
 import json
 from pathlib import Path
 
-data=json.loads(Path('/tmp/openai-response.json').read_text())
-text=data.get('output_text','') or ''
+data = json.loads(Path("/tmp/openai-response.json").read_text())
+text = data.get("output_text", "") or ""
 if not text:
-    for item in data.get('output',[]):
-        for c in item.get('content',[]):
-            if c.get('type')=='output_text':
-                text += c.get('text','')
-Path('/tmp/ai.patch').write_text(text.strip())
+    for item in data.get("output", []):
+        for content in item.get("content", []):
+            if content.get("type") == "output_text":
+                text += content.get("text", "")
+Path("/tmp/ai.patch").write_text(text.strip())
 PY
 
-            if grep -qx 'NO_SAFE_PATCH' /tmp/ai.patch; then
+            if grep -qx "NO_SAFE_PATCH" /tmp/ai.patch; then
               echo "AI returned NO_SAFE_PATCH"
               exit "$code"
             fi
@@ -161,7 +145,7 @@ PY
           done
 
       - name: Report Vercel deployment check
-        if: ${{ success() && (github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[ai-auto]')) }}
+        if: ${{ success() }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -170,7 +154,7 @@ PY
           echo "Waiting briefly for Vercel check on $sha"
           for i in $(seq 1 20); do
             checks=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100" 2>/dev/null || echo '{"check_runs":[]}')
-            line=$(echo "$checks" | jq -r '.check_runs[] | select((.name // "") | test("vercel"; "i")) | [.name,.status,(.conclusion // ""),.html_url] | @tsv' | head -n1)
+            line=$(echo "$checks" | jq -r '.check_runs[] | select((.name // "") | test("vercel"; "i")) | [.name,.status,(.conclusion // ""),.html_url] | @tsv' | head -n 1)
             if [ -n "$line" ]; then
               echo "VERCEL_CHECK=$line"
               status=$(echo "$line" | cut -f2)
