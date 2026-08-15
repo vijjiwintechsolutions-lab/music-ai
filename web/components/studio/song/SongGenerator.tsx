@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import {
   Music4,
   Wand2,
@@ -14,7 +13,84 @@ import {
   Copy,
   Check,
   AlertCircle,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  Square,
+  RefreshCw,
+  FileText,
+  ListMusic,
+  Guitar,
+  Tags,
 } from "lucide-react";
+
+type GenerationStatus =
+  | "idle"
+  | "preparing"
+  | "generating"
+  | "completed"
+  | "error";
+
+type SongOutline = {
+  concept: string;
+  intro: string;
+  verse1: string;
+  preChorus: string;
+  chorus: string;
+  verse2: string;
+  bridge: string;
+  finalChorus: string;
+  outro: string;
+};
+
+type Arrangement = {
+  intro: string;
+  verse: string;
+  preChorus: string;
+  chorus: string;
+  bridge: string;
+  finalChorus: string;
+  outro: string;
+  instruments: string[];
+  vocalStyle: string;
+  productionStyle: string;
+  dynamics: string;
+};
+
+type SongMetadata = {
+  title: string;
+  description: string;
+  genre: string;
+  mood: string;
+  language: string;
+  tempo: number;
+  key: string;
+  timeSignature: string;
+  durationSeconds: number;
+  singer: string;
+  vocalType: string;
+  energy: string;
+  theme: string;
+  tags: string[];
+};
+
+type ChordProgression = {
+  romanNumeral?: string;
+  chords?: string[];
+  section?: string;
+  notes?: string;
+  [key: string]: unknown;
+};
+
+type SongPackage = {
+  title: string;
+  description: string;
+  lyrics: string;
+  outline: SongOutline;
+  arrangement: Arrangement;
+  metadata: SongMetadata;
+};
 
 const genres = [
   "Pop",
@@ -95,14 +171,6 @@ const singers = [
   "Child",
 ];
 
-const historySongs = [
-  "Summer Nights",
-  "Telugu Love Song",
-  "LoFi Chill Beat",
-  "Motivation Anthem",
-  "Epic Trailer Music",
-];
-
 const suggestions = [
   "Add cinematic orchestra",
   "Make vocals emotional",
@@ -113,90 +181,737 @@ const suggestions = [
 ];
 
 const exportFormats = [
-  "MP3 320kbps",
-  "WAV Studio",
-  "FLAC Lossless",
-  "MIDI",
   "Lyrics (.txt)",
-  "Project (.zip)",
+  "Outline (.txt)",
+  "Arrangement (.txt)",
+  "Project (.json)",
 ];
 
-type GenerationStatus =
-  | "idle"
-  | "preparing"
-  | "generating"
-  | "completed"
-  | "error";
+const EMPTY_OUTLINE: SongOutline = {
+  concept: "",
+  intro: "",
+  verse1: "",
+  preChorus: "",
+  chorus: "",
+  verse2: "",
+  bridge: "",
+  finalChorus: "",
+  outro: "",
+};
+
+const EMPTY_ARRANGEMENT: Arrangement = {
+  intro: "",
+  verse: "",
+  preChorus: "",
+  chorus: "",
+  bridge: "",
+  finalChorus: "",
+  outro: "",
+  instruments: [],
+  vocalStyle: "",
+  productionStyle: "",
+  dynamics: "",
+};
+
+function createDefaultMetadata(
+  genre: string,
+  mood: string,
+  language: string,
+  duration: number,
+  tempo: number,
+  musicalKey: string,
+  singer: string,
+): SongMetadata {
+  return {
+    title: "",
+    description: "",
+    genre,
+    mood,
+    language,
+    tempo,
+    key: musicalKey,
+    timeSignature: "4/4",
+    durationSeconds: duration,
+    singer,
+    vocalType: singer,
+    energy: mood,
+    theme: "",
+    tags: [genre, mood, language].filter(Boolean),
+  };
+}
+
+function cleanString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseJsonFromAI(text: string): Record<string, unknown> | null {
+  const trimmed = text.trim();
+
+  try {
+    const parsed = JSON.parse(trimmed);
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // Continue with fenced JSON extraction.
+  }
+
+  const fencedMatch = trimmed.match(
+    /```(?:json)?\s*([\s\S]*?)\s*```/i,
+  );
+
+  if (fencedMatch?.[1]) {
+    try {
+      const parsed = JSON.parse(fencedMatch[1]);
+
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed)
+      ) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // Continue with balanced-object extraction.
+    }
+  }
+
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    const candidate = trimmed.slice(firstBrace, lastBrace + 1);
+
+    try {
+      const parsed = JSON.parse(candidate);
+
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed)
+      ) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function normalizeSongPackage(
+  raw: Record<string, unknown>,
+  defaults: SongMetadata,
+): SongPackage {
+  const rawMetadata =
+    raw.metadata &&
+    typeof raw.metadata === "object" &&
+    !Array.isArray(raw.metadata)
+      ? (raw.metadata as Record<string, unknown>)
+      : {};
+
+  const rawOutline =
+    raw.outline &&
+    typeof raw.outline === "object" &&
+    !Array.isArray(raw.outline)
+      ? (raw.outline as Record<string, unknown>)
+      : {};
+
+  const rawArrangement =
+    raw.arrangement &&
+    typeof raw.arrangement === "object" &&
+    !Array.isArray(raw.arrangement)
+      ? (raw.arrangement as Record<string, unknown>)
+      : {};
+
+  const title =
+    cleanString(raw.title) ||
+    cleanString(raw.songTitle) ||
+    "Untitled AI Song";
+
+  const description =
+    cleanString(raw.description) ||
+    cleanString(raw.songDescription);
+
+  const lyrics =
+    cleanString(raw.lyrics) ||
+    cleanString(raw.generatedLyrics);
+
+  const metadata: SongMetadata = {
+    ...defaults,
+    title,
+    description,
+    genre:
+      cleanString(rawMetadata.genre) ||
+      defaults.genre,
+    mood:
+      cleanString(rawMetadata.mood) ||
+      defaults.mood,
+    language:
+      cleanString(rawMetadata.language) ||
+      defaults.language,
+    tempo:
+      typeof rawMetadata.tempo === "number" &&
+      Number.isFinite(rawMetadata.tempo)
+        ? rawMetadata.tempo
+        : defaults.tempo,
+    key:
+      cleanString(rawMetadata.key) ||
+      cleanString(rawMetadata.musicalKey) ||
+      defaults.key,
+    timeSignature:
+      cleanString(rawMetadata.timeSignature) ||
+      "4/4",
+    durationSeconds:
+      typeof rawMetadata.durationSeconds === "number" &&
+      Number.isFinite(rawMetadata.durationSeconds)
+        ? rawMetadata.durationSeconds
+        : defaults.durationSeconds,
+    singer:
+      cleanString(rawMetadata.singer) ||
+      defaults.singer,
+    vocalType:
+      cleanString(rawMetadata.vocalType) ||
+      cleanString(rawMetadata.vocals) ||
+      defaults.vocalType,
+    energy:
+      cleanString(rawMetadata.energy) ||
+      defaults.energy,
+    theme:
+      cleanString(rawMetadata.theme),
+    tags:
+      normalizeStringArray(rawMetadata.tags).length > 0
+        ? normalizeStringArray(rawMetadata.tags)
+        : defaults.tags,
+  };
+
+  const outline: SongOutline = {
+    concept: cleanString(rawOutline.concept),
+    intro: cleanString(rawOutline.intro),
+    verse1:
+      cleanString(rawOutline.verse1) ||
+      cleanString(rawOutline.verse),
+    preChorus:
+      cleanString(rawOutline.preChorus),
+    chorus: cleanString(rawOutline.chorus),
+    verse2: cleanString(rawOutline.verse2),
+    bridge: cleanString(rawOutline.bridge),
+    finalChorus:
+      cleanString(rawOutline.finalChorus),
+    outro: cleanString(rawOutline.outro),
+  };
+
+  const arrangement: Arrangement = {
+    intro: cleanString(rawArrangement.intro),
+    verse: cleanString(rawArrangement.verse),
+    preChorus:
+      cleanString(rawArrangement.preChorus),
+    chorus: cleanString(rawArrangement.chorus),
+    bridge: cleanString(rawArrangement.bridge),
+    finalChorus:
+      cleanString(rawArrangement.finalChorus),
+    outro: cleanString(rawArrangement.outro),
+    instruments:
+      normalizeStringArray(rawArrangement.instruments),
+    vocalStyle:
+      cleanString(rawArrangement.vocalStyle),
+    productionStyle:
+      cleanString(rawArrangement.productionStyle),
+    dynamics:
+      cleanString(rawArrangement.dynamics),
+  };
+
+  return {
+    title,
+    description,
+    lyrics,
+    outline,
+    arrangement,
+    metadata,
+  };
+}
+
+async function callAI(
+  prompt: string,
+  maxTokens = 4096,
+): Promise<string> {
+  const response = await fetch("/api/ai/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt,
+      maxTokens,
+      temperature: 0.75,
+    }),
+  });
+
+  const contentType =
+    response.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    const text = await response.text();
+
+    throw new Error(
+      text
+        ? `AI server returned an invalid response: ${text.slice(
+            0,
+            300,
+          )}`
+        : "AI server returned an empty response.",
+    );
+  }
+
+  const data = (await response.json()) as {
+    success?: boolean;
+    data?: unknown;
+    text?: unknown;
+    response?: unknown;
+    result?: unknown;
+    error?: unknown;
+  };
+
+  if (!response.ok || data.success === false) {
+    throw new Error(
+      cleanString(data.error) ||
+        "AI generation request failed.",
+    );
+  }
+
+  const output =
+    cleanString(data.data) ||
+    cleanString(data.text) ||
+    cleanString(data.response) ||
+    cleanString(data.result);
+
+  if (!output) {
+    throw new Error("AI returned an empty response.");
+  }
+
+  return output;
+}
+
+async function fetchChords(
+  musicalKey: string,
+  mood: string,
+): Promise<{
+  progression: ChordProgression[];
+  formatted: string;
+}> {
+  const key = musicalKey
+    .replace(/\s+(Major|Minor)$/i, "")
+    .trim();
+
+  const response = await fetch(
+    `/api/music-tools/chords?key=${encodeURIComponent(
+      key,
+    )}&mood=${encodeURIComponent(mood)}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    },
+  );
+
+  const contentType =
+    response.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      "Chord API returned an invalid response.",
+    );
+  }
+
+  const data = (await response.json()) as {
+    success?: boolean;
+    progression?: unknown;
+    formatted?: unknown;
+    error?: unknown;
+  };
+
+  if (!response.ok || data.success === false) {
+    throw new Error(
+      cleanString(data.error) ||
+        "Chord progression generation failed.",
+    );
+  }
+
+  const progression = Array.isArray(data.progression)
+    ? (data.progression as ChordProgression[])
+    : [];
+
+  const formatted = cleanString(data.formatted);
+
+  if (!progression.length && !formatted) {
+    throw new Error(
+      "Chord API returned an empty progression.",
+    );
+  }
+
+  return {
+    progression,
+    formatted,
+  };
+}
+
+function formatDuration(seconds: number): string {
+  const safeSeconds = Math.max(
+    0,
+    Math.round(seconds),
+  );
+
+  return `${Math.floor(safeSeconds / 60)
+    .toString()
+    .padStart(2, "0")}:${(safeSeconds % 60)
+    .toString()
+    .padStart(2, "0")}`;
+}
+
+function getSpeechLanguage(language: string): string {
+  const map: Record<string, string> = {
+    English: "en-US",
+    Telugu: "te-IN",
+    Hindi: "hi-IN",
+    Tamil: "ta-IN",
+    Kannada: "kn-IN",
+    Malayalam: "ml-IN",
+    Spanish: "es-ES",
+    French: "fr-FR",
+    German: "de-DE",
+    Japanese: "ja-JP",
+  };
+
+  return map[language] || "en-US";
+}
+
+function downloadText(
+  filename: string,
+  content: string,
+  mimeType = "text/plain;charset=utf-8",
+) {
+  if (!content.trim()) {
+    return;
+  }
+
+  const blob = new Blob([content], {
+    type: mimeType,
+  });
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
+}
+
+function buildProjectExport(
+  song: SongPackage,
+  chords: {
+    progression: ChordProgression[];
+    formatted: string;
+  },
+  settings: Record<string, unknown>,
+) {
+  return JSON.stringify(
+    {
+      exportedAt: new Date().toISOString(),
+      song,
+      chords,
+      settings,
+    },
+    null,
+    2,
+  );
+}
 
 export default function SongGenerator() {
   const [prompt, setPrompt] = useState("");
 
   const [genre, setGenre] = useState("Pop");
   const [mood, setMood] = useState("Happy");
-  const [language, setLanguage] = useState("English");
-  const [model, setModel] = useState(models[0]);
+  const [language, setLanguage] =
+    useState("English");
+  const [model, setModel] =
+    useState(models[0]);
 
   const [duration, setDuration] = useState(180);
 
-  const [instrumental, setInstrumental] = useState(false);
-  const [explicitLyrics, setExplicitLyrics] = useState(false);
-  const [highQuality, setHighQuality] = useState(true);
+  const [instrumental, setInstrumental] =
+    useState(false);
+  const [explicitLyrics, setExplicitLyrics] =
+    useState(false);
+  const [highQuality, setHighQuality] =
+    useState(true);
 
   const [tempo, setTempo] = useState(120);
-  const [musicalKey, setMusicalKey] = useState("C Major");
-  const [singer, setSinger] = useState("Male");
+  const [musicalKey, setMusicalKey] =
+    useState("C Major");
+  const [singer, setSinger] =
+    useState("Male");
 
-  const [creativity, setCreativity] = useState(70);
-  const [similarity, setSimilarity] = useState(80);
+  const [creativity, setCreativity] =
+    useState(70);
+  const [similarity, setSimilarity] =
+    useState(80);
 
-  const [negativePrompt, setNegativePrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] =
+    useState("");
 
-  const [generatedLyrics, setGeneratedLyrics] = useState("");
+  const [generatedLyrics, setGeneratedLyrics] =
+    useState("");
   const [generatedSongTitle, setGeneratedSongTitle] =
     useState("Untitled AI Song");
+
+  const [songDescription, setSongDescription] =
+    useState("");
+
+  const [songOutline, setSongOutline] =
+    useState<SongOutline>(EMPTY_OUTLINE);
+
+  const [arrangement, setArrangement] =
+    useState<Arrangement>(EMPTY_ARRANGEMENT);
+
+  const [metadata, setMetadata] =
+    useState<SongMetadata>(
+      createDefaultMetadata(
+        "Pop",
+        "Happy",
+        "English",
+        180,
+        120,
+        "C Major",
+        "Male",
+      ),
+    );
+
+  const [chords, setChords] = useState<{
+    progression: ChordProgression[];
+    formatted: string;
+  }>({
+    progression: [],
+    formatted: "",
+  });
 
   const [status, setStatus] =
     useState<GenerationStatus>("idle");
 
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] =
+    useState(0);
+
+  const [pipelineStep, setPipelineStep] =
+    useState("");
 
   const [error, setError] = useState("");
 
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] =
+    useState(false);
 
-  const [generationTime, setGenerationTime] =
-    useState("02:18");
+  const [speechSupported, setSpeechSupported] =
+    useState(false);
 
-  const [audioUrl, setAudioUrl] = useState("");
+  const [speechSpeaking, setSpeechSpeaking] =
+    useState(false);
+
+  const [speechPaused, setSpeechPaused] =
+    useState(false);
+
+  const [speechTarget, setSpeechTarget] =
+    useState<"lyrics" | "outline" | "arrangement">(
+      "lyrics",
+    );
+
+  const [speechRate, setSpeechRate] =
+    useState(1);
+
+  const [speechPitch, setSpeechPitch] =
+    useState(1);
 
   useEffect(() => {
-    if (status !== "generating") {
+    if (
+      typeof window === "undefined" ||
+      !("speechSynthesis" in window)
+    ) {
       return;
     }
 
-    const timer = window.setInterval(() => {
-      setProgress((current) => {
-        if (current >= 92) {
-          return current;
-        }
+    setSpeechSupported(true);
 
-        return current + 2;
-      });
-    }, 700);
+    const synthesis = window.speechSynthesis;
+
+    const updateSpeechState = () => {
+      setSpeechSpeaking(
+        synthesis.speaking,
+      );
+      setSpeechPaused(
+        synthesis.paused,
+      );
+    };
+
+    const interval = window.setInterval(
+      updateSpeechState,
+      250,
+    );
 
     return () => {
-      window.clearInterval(timer);
+      window.clearInterval(interval);
+      synthesis.cancel();
     };
-  }, [status]);
+  }, []);
 
-  function buildPrompt() {
-    const finalPrompt = prompt.trim();
+  useEffect(() => {
+    if (
+      status !== "generating" ||
+      progress >= 100
+    ) {
+      return;
+    }
+
+    return undefined;
+  }, [status, progress]);
+
+  const outlineText = useMemo(() => {
+    return [
+      songOutline.concept &&
+        `Concept: ${songOutline.concept}`,
+      songOutline.intro &&
+        `Intro: ${songOutline.intro}`,
+      songOutline.verse1 &&
+        `Verse 1: ${songOutline.verse1}`,
+      songOutline.preChorus &&
+        `Pre-Chorus: ${songOutline.preChorus}`,
+      songOutline.chorus &&
+        `Chorus: ${songOutline.chorus}`,
+      songOutline.verse2 &&
+        `Verse 2: ${songOutline.verse2}`,
+      songOutline.bridge &&
+        `Bridge: ${songOutline.bridge}`,
+      songOutline.finalChorus &&
+        `Final Chorus: ${songOutline.finalChorus}`,
+      songOutline.outro &&
+        `Outro: ${songOutline.outro}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  }, [songOutline]);
+
+  const arrangementText = useMemo(() => {
+    return [
+      arrangement.intro &&
+        `Intro: ${arrangement.intro}`,
+      arrangement.verse &&
+        `Verse: ${arrangement.verse}`,
+      arrangement.preChorus &&
+        `Pre-Chorus: ${arrangement.preChorus}`,
+      arrangement.chorus &&
+        `Chorus: ${arrangement.chorus}`,
+      arrangement.bridge &&
+        `Bridge: ${arrangement.bridge}`,
+      arrangement.finalChorus &&
+        `Final Chorus: ${arrangement.finalChorus}`,
+      arrangement.outro &&
+        `Outro: ${arrangement.outro}`,
+      arrangement.instruments.length
+        ? `Instruments: ${arrangement.instruments.join(
+            ", ",
+          )}`
+        : "",
+      arrangement.vocalStyle &&
+        `Vocal Style: ${arrangement.vocalStyle}`,
+      arrangement.productionStyle &&
+        `Production Style: ${arrangement.productionStyle}`,
+      arrangement.dynamics &&
+        `Dynamics: ${arrangement.dynamics}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  }, [arrangement]);
+
+  const projectJson = useMemo(() => {
+    return buildProjectExport(
+      {
+        title: generatedSongTitle,
+        description: songDescription,
+        lyrics: generatedLyrics,
+        outline: songOutline,
+        arrangement,
+        metadata,
+      },
+      chords,
+      {
+        prompt,
+        genre,
+        mood,
+        language,
+        model,
+        duration,
+        instrumental,
+        explicitLyrics,
+        highQuality,
+        tempo,
+        musicalKey,
+        singer,
+        creativity,
+        similarity,
+        negativePrompt,
+      },
+    );
+  }, [
+    generatedSongTitle,
+    songDescription,
+    generatedLyrics,
+    songOutline,
+    arrangement,
+    metadata,
+    chords,
+    prompt,
+    genre,
+    mood,
+    language,
+    model,
+    duration,
+    instrumental,
+    explicitLyrics,
+    highQuality,
+    tempo,
+    musicalKey,
+    singer,
+    creativity,
+    similarity,
+    negativePrompt,
+  ]);
+
+  function buildSongPrompt() {
+    const finalPrompt =
+      prompt.trim() ||
+      "Create an original song suitable for the selected settings.";
 
     return `
-Create a complete song concept based on the following request.
+Create a complete original song package.
 
 USER REQUEST:
-${finalPrompt || "Create an original song suitable for the selected settings."}
+${finalPrompt}
 
 SONG SETTINGS:
 Genre: ${genre}
@@ -216,158 +931,189 @@ Similarity: ${similarity}%
 NEGATIVE PROMPT:
 ${negativePrompt.trim() || "None"}
 
-Please provide:
-1. A suitable song title.
-2. A short description of the song.
-3. Complete original lyrics with Verse 1, Chorus, Verse 2, Bridge and Final Chorus where appropriate.
-4. Suggested instrumentation.
-5. Suggested vocal style.
-6. Suggested production style.
+Return ONLY valid JSON.
+Do not wrap the JSON in markdown.
+Do not add explanations before or after the JSON.
 
-Write the lyrics in ${language}.
-Make the result original and suitable for the selected genre and mood.
+Use exactly this structure:
+
+{
+  "title": "string",
+  "description": "string",
+  "lyrics": "complete original lyrics with section labels",
+  "outline": {
+    "concept": "string",
+    "intro": "string",
+    "verse1": "string",
+    "preChorus": "string",
+    "chorus": "string",
+    "verse2": "string",
+    "bridge": "string",
+    "finalChorus": "string",
+    "outro": "string"
+  },
+  "arrangement": {
+    "intro": "string",
+    "verse": "string",
+    "preChorus": "string",
+    "chorus": "string",
+    "bridge": "string",
+    "finalChorus": "string",
+    "outro": "string",
+    "instruments": ["string"],
+    "vocalStyle": "string",
+    "productionStyle": "string",
+    "dynamics": "string"
+  },
+  "metadata": {
+    "title": "string",
+    "description": "string",
+    "genre": "${genre}",
+    "mood": "${mood}",
+    "language": "${language}",
+    "tempo": ${tempo},
+    "key": "${musicalKey}",
+    "timeSignature": "4/4",
+    "durationSeconds": ${duration},
+    "singer": "${singer}",
+    "vocalType": "string",
+    "energy": "string",
+    "theme": "string",
+    "tags": ["string"]
+  }
+}
+
+LYRICS REQUIREMENTS:
+- Write original lyrics.
+- Write lyrics in ${language}.
+- Use clear sections such as [Verse 1], [Pre-Chorus], [Chorus], [Verse 2], [Bridge], [Final Chorus], [Outro].
+- If Instrumental is Yes, lyrics may be empty and the arrangement must focus on instrumentation.
+- Do not imitate a living artist.
+- Do not reproduce existing copyrighted lyrics.
+
+OUTLINE REQUIREMENTS:
+Describe the actual structure of this song, not generic advice.
+
+ARRANGEMENT REQUIREMENTS:
+Describe what instruments and production elements should occur in each section.
 `.trim();
   }
 
   async function generateSong() {
-    if (status === "generating") {
+    if (
+      status === "generating" ||
+      status === "preparing"
+    ) {
       return;
     }
 
     setError("");
     setCopied(false);
     setStatus("preparing");
-    setProgress(10);
-    setAudioUrl("");
+    setProgress(5);
+    setPipelineStep("Preparing song request");
 
     try {
-      await new Promise((resolve) =>
-        window.setTimeout(resolve, 500)
+      const defaults = createDefaultMetadata(
+        genre,
+        mood,
+        language,
+        duration,
+        tempo,
+        musicalKey,
+        singer,
       );
 
+      setPipelineStep(
+        "Generating lyrics, outline, arrangement and metadata",
+      );
+      setProgress(15);
       setStatus("generating");
-      setProgress(20);
 
-      const response = await fetch("/api/ai/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: buildPrompt(),
-          type: "song",
-          provider: "gemini",
-          genre,
-          mood,
-          language,
-          model,
-          duration,
-          instrumental,
-          explicitLyrics,
-          highQuality,
-          tempo,
-          musicalKey,
-          singer,
-          creativity,
-          similarity,
-          negativePrompt,
-        }),
-      });
+      const aiText = await callAI(
+        buildSongPrompt(),
+        8192,
+      );
 
-      const contentType =
-        response.headers.get("content-type") || "";
+      setProgress(65);
+      setPipelineStep(
+        "Parsing AI song package",
+      );
 
-      let data: any = null;
+      const parsed = parseJsonFromAI(aiText);
 
-      if (contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-
+      if (!parsed) {
         throw new Error(
-          text
-            ? `AI server returned an invalid response: ${text.slice(
-                0,
-                200
-              )}`
-            : "AI server returned an empty response."
+          "AI returned text that was not valid song-package JSON. No partial result was applied.",
         );
       }
 
-      if (!response.ok) {
+      const song = normalizeSongPackage(
+        parsed,
+        defaults,
+      );
+
+      if (
+        !song.lyrics &&
+        !instrumental
+      ) {
         throw new Error(
-          data?.error ||
-            data?.message ||
-            "Unable to generate the song."
+          "AI returned a song package without lyrics.",
         );
       }
 
-      const output =
-        data?.text ||
-        data?.response ||
-        data?.result ||
-        data?.data?.text ||
-        data?.data ||
-        "";
+      setGeneratedSongTitle(song.title);
+      setSongDescription(
+        song.description,
+      );
+      setGeneratedLyrics(song.lyrics);
+      setSongOutline(song.outline);
+      setArrangement(song.arrangement);
+      setMetadata(song.metadata);
 
-      if (!output) {
-        throw new Error(
-          "AI returned an empty response."
-        );
-      }
+      setPipelineStep(
+        "Generating chord progression",
+      );
+      setProgress(75);
+
+      const chordResult = await fetchChords(
+        musicalKey,
+        mood,
+      );
+
+      setChords(chordResult);
 
       setProgress(100);
-
-      setGeneratedLyrics(String(output));
-
-      const titleMatch = String(output).match(
-        /(?:song title|title)\s*[:\-]\s*(.+)/i
+      setPipelineStep(
+        "Song package completed",
       );
-
-      if (titleMatch?.[1]) {
-        setGeneratedSongTitle(
-          titleMatch[1]
-            .replace(/\*/g, "")
-            .trim()
-            .slice(0, 100)
-        );
-      } else {
-        setGeneratedSongTitle(
-          `${mood} ${language} ${genre} Song`
-        );
-      }
-
-      setGenerationTime(
-        `${Math.floor(duration / 60)
-          .toString()
-          .padStart(2, "0")}:${(duration % 60)
-          .toString()
-          .padStart(2, "0")}`
-      );
-
       setStatus("completed");
     } catch (err) {
-      console.error("Song generation error:", err);
+      console.error(
+        "Song generation error:",
+        err,
+      );
 
       setStatus("error");
       setProgress(0);
+      setPipelineStep("");
 
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong while generating the song."
+          : "Something went wrong while generating the song.",
       );
     }
   }
 
-  async function copyLyrics() {
-    if (!generatedLyrics) {
+  async function copyText(text: string) {
+    if (!text.trim()) {
       return;
     }
 
     try {
       await navigator.clipboard.writeText(
-        generatedLyrics
+        text,
       );
 
       setCopied(true);
@@ -377,9 +1123,126 @@ Make the result original and suitable for the selected genre and mood.
       }, 2000);
     } catch {
       setError(
-        "Unable to copy lyrics to clipboard."
+        "Unable to copy content to clipboard.",
       );
     }
+  }
+
+  function speakCurrentTarget() {
+    if (
+      !speechSupported ||
+      typeof window === "undefined"
+    ) {
+      setError(
+        "Text-to-speech is not supported by this browser.",
+      );
+      return;
+    }
+
+    const synthesis =
+      window.speechSynthesis;
+
+    let text = "";
+
+    if (speechTarget === "lyrics") {
+      text = generatedLyrics;
+    } else if (speechTarget === "outline") {
+      text = outlineText;
+    } else {
+      text = arrangementText;
+    }
+
+    if (!text.trim()) {
+      setError(
+        `No ${speechTarget} content is available for TTS.`,
+      );
+      return;
+    }
+
+    synthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        text.trim(),
+      );
+
+    utterance.rate = Math.min(
+      2,
+      Math.max(0.1, speechRate),
+    );
+
+    utterance.pitch = Math.min(
+      2,
+      Math.max(0, speechPitch),
+    );
+
+    utterance.volume = 1;
+    utterance.lang =
+      getSpeechLanguage(language);
+
+    utterance.onstart = () => {
+      setSpeechSpeaking(true);
+      setSpeechPaused(false);
+    };
+
+    utterance.onpause = () => {
+      setSpeechSpeaking(true);
+      setSpeechPaused(true);
+    };
+
+    utterance.onresume = () => {
+      setSpeechSpeaking(true);
+      setSpeechPaused(false);
+    };
+
+    utterance.onend = () => {
+      setSpeechSpeaking(false);
+      setSpeechPaused(false);
+    };
+
+    utterance.onerror = () => {
+      setSpeechSpeaking(false);
+      setSpeechPaused(false);
+    };
+
+    synthesis.speak(utterance);
+  }
+
+  function pauseSpeech() {
+    if (
+      typeof window === "undefined" ||
+      !speechSupported
+    ) {
+      return;
+    }
+
+    window.speechSynthesis.pause();
+    setSpeechPaused(true);
+  }
+
+  function resumeSpeech() {
+    if (
+      typeof window === "undefined" ||
+      !speechSupported
+    ) {
+      return;
+    }
+
+    window.speechSynthesis.resume();
+    setSpeechPaused(false);
+  }
+
+  function stopSpeech() {
+    if (
+      typeof window === "undefined" ||
+      !speechSupported
+    ) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    setSpeechSpeaking(false);
+    setSpeechPaused(false);
   }
 
   function applySuggestion(value: string) {
@@ -395,14 +1258,84 @@ Make the result original and suitable for the selected genre and mood.
   }
 
   function handleKeyboardShortcut(
-    event: React.KeyboardEvent
+    event: React.KeyboardEvent,
   ) {
     if (
       event.ctrlKey &&
       event.key.toLowerCase() === "enter"
     ) {
       event.preventDefault();
-      generateSong();
+      void generateSong();
+    }
+
+    if (
+      event.ctrlKey &&
+      event.key.toLowerCase() === "l"
+    ) {
+      event.preventDefault();
+
+      if (generatedLyrics) {
+        void copyText(generatedLyrics);
+      }
+    }
+
+    if (
+      event.ctrlKey &&
+      event.key.toLowerCase() === "p"
+    ) {
+      event.preventDefault();
+
+      if (speechSpeaking) {
+        if (speechPaused) {
+          resumeSpeech();
+        } else {
+          pauseSpeech();
+        }
+      } else {
+        speakCurrentTarget();
+      }
+    }
+  }
+
+  function exportCurrent(
+    format: string,
+  ) {
+    const safeTitle =
+      generatedSongTitle
+        .replace(/[^\w\-]+/g, "_")
+        .slice(0, 80) ||
+      "ai-song";
+
+    if (format === "Lyrics (.txt)") {
+      downloadText(
+        `${safeTitle}-lyrics.txt`,
+        generatedLyrics,
+      );
+      return;
+    }
+
+    if (format === "Outline (.txt)") {
+      downloadText(
+        `${safeTitle}-outline.txt`,
+        outlineText,
+      );
+      return;
+    }
+
+    if (format === "Arrangement (.txt)") {
+      downloadText(
+        `${safeTitle}-arrangement.txt`,
+        arrangementText,
+      );
+      return;
+    }
+
+    if (format === "Project (.json)") {
+      downloadText(
+        `${safeTitle}-project.json`,
+        projectJson,
+        "application/json;charset=utf-8",
+      );
     }
   }
 
@@ -411,20 +1344,17 @@ Make the result original and suitable for the selected genre and mood.
       className="space-y-8"
       onKeyDown={handleKeyboardShortcut}
     >
-      {/* Header */}
-
       <div>
         <h1 className="text-5xl font-black">
           AI Song Generator
         </h1>
 
         <p className="mt-3 text-lg text-muted-foreground">
-          Create complete songs using artificial
-          intelligence.
+          Generate lyrics, song structure,
+          arrangement, chords and metadata from
+          one song request.
         </p>
       </div>
-
-      {/* Error */}
 
       {error && (
         <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-5 text-red-300">
@@ -435,18 +1365,14 @@ Make the result original and suitable for the selected genre and mood.
               AI Generation Error
             </p>
 
-            <p className="mt-1 text-sm">
+            <p className="mt-1 text-sm whitespace-pre-wrap">
               {error}
             </p>
           </div>
         </div>
       )}
 
-      {/* Main Generator */}
-
       <div className="grid gap-8 xl:grid-cols-3">
-        {/* Prompt */}
-
         <div className="xl:col-span-2">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
             <div className="mb-8 flex items-center gap-4">
@@ -460,7 +1386,7 @@ Make the result original and suitable for the selected genre and mood.
                 </h2>
 
                 <p className="text-muted-foreground">
-                  Describe the music you want.
+                  Describe the song you want.
                 </p>
               </div>
             </div>
@@ -470,7 +1396,7 @@ Make the result original and suitable for the selected genre and mood.
               onChange={(event) =>
                 setPrompt(event.target.value)
               }
-              placeholder="Example: Create an emotional Telugu melody about friendship with piano and violin..."
+              placeholder="Example: Create an emotional Telugu melody about friendship with piano, violin and a cinematic chorus..."
               className="min-h-[220px] w-full rounded-2xl border border-white/10 bg-background p-6 text-lg outline-none focus:border-violet-500/50"
             />
 
@@ -484,7 +1410,9 @@ Make the result original and suitable for the selected genre and mood.
                 <button
                   key={item}
                   type="button"
-                  onClick={() => setPrompt(item)}
+                  onClick={() =>
+                    setPrompt(item)
+                  }
                   className="rounded-full border border-white/10 px-4 py-2 text-xs text-muted-foreground transition hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-300"
                 >
                   {item}
@@ -493,8 +1421,6 @@ Make the result original and suitable for the selected genre and mood.
             </div>
           </div>
         </div>
-
-        {/* Settings */}
 
         <div>
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
@@ -507,99 +1433,45 @@ Make the result original and suitable for the selected genre and mood.
             </div>
 
             <div className="space-y-6">
-              {/* Genre */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
+              <SelectField
+                label="Genre"
+                icon={
                   <Music4 className="h-4 w-4" />
-                  Genre
-                </label>
+                }
+                value={genre}
+                onChange={setGenre}
+                options={genres}
+              />
 
-                <select
-                  value={genre}
-                  onChange={(event) =>
-                    setGenre(event.target.value)
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-background p-4"
-                >
-                  {genres.map((item) => (
-                    <option key={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Mood */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
+              <SelectField
+                label="Mood"
+                icon={
                   <Sparkles className="h-4 w-4" />
-                  Mood
-                </label>
+                }
+                value={mood}
+                onChange={setMood}
+                options={moods}
+              />
 
-                <select
-                  value={mood}
-                  onChange={(event) =>
-                    setMood(event.target.value)
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-background p-4"
-                >
-                  {moods.map((item) => (
-                    <option key={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Language */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
+              <SelectField
+                label="Language"
+                icon={
                   <Globe className="h-4 w-4" />
-                  Language
-                </label>
+                }
+                value={language}
+                onChange={setLanguage}
+                options={languages}
+              />
 
-                <select
-                  value={language}
-                  onChange={(event) =>
-                    setLanguage(event.target.value)
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-background p-4"
-                >
-                  {languages.map((item) => (
-                    <option key={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Model */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
+              <SelectField
+                label="AI Model"
+                icon={
                   <Cpu className="h-4 w-4" />
-                  AI Model
-                </label>
-
-                <select
-                  value={model}
-                  onChange={(event) =>
-                    setModel(event.target.value)
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-background p-4"
-                >
-                  {models.map((item) => (
-                    <option key={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Duration */}
+                }
+                value={model}
+                onChange={setModel}
+                options={models}
+              />
 
               <div>
                 <label className="mb-3 flex items-center justify-between font-semibold">
@@ -618,91 +1490,37 @@ Make the result original and suitable for the selected genre and mood.
                   value={duration}
                   onChange={(event) =>
                     setDuration(
-                      Number(event.target.value)
+                      Number(event.target.value),
                     )
                   }
                   className="w-full"
                 />
               </div>
 
-              {/* Toggles */}
+              <ToggleField
+                title="Instrumental"
+                description="Generate music without vocals"
+                checked={instrumental}
+                onChange={setInstrumental}
+              />
 
-              <div className="space-y-5">
-                <label className="flex items-center justify-between rounded-xl border border-white/10 p-4">
-                  <div>
-                    <h3 className="font-semibold">
-                      Instrumental
-                    </h3>
+              <ToggleField
+                title="Explicit Lyrics"
+                description="Allow mature content"
+                checked={explicitLyrics}
+                onChange={setExplicitLyrics}
+              />
 
-                    <p className="text-sm text-muted-foreground">
-                      Generate music without vocals
-                    </p>
-                  </div>
-
-                  <input
-                    type="checkbox"
-                    checked={instrumental}
-                    onChange={(event) =>
-                      setInstrumental(
-                        event.target.checked
-                      )
-                    }
-                    className="h-5 w-5"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between rounded-xl border border-white/10 p-4">
-                  <div>
-                    <h3 className="font-semibold">
-                      Explicit Lyrics
-                    </h3>
-
-                    <p className="text-sm text-muted-foreground">
-                      Allow mature content
-                    </p>
-                  </div>
-
-                  <input
-                    type="checkbox"
-                    checked={explicitLyrics}
-                    onChange={(event) =>
-                      setExplicitLyrics(
-                        event.target.checked
-                      )
-                    }
-                    className="h-5 w-5"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between rounded-xl border border-white/10 p-4">
-                  <div>
-                    <h3 className="font-semibold">
-                      High Quality
-                    </h3>
-
-                    <p className="text-sm text-muted-foreground">
-                      Better audio quality
-                    </p>
-                  </div>
-
-                  <input
-                    type="checkbox"
-                    checked={highQuality}
-                    onChange={(event) =>
-                      setHighQuality(
-                        event.target.checked
-                      )
-                    }
-                    className="h-5 w-5"
-                  />
-                </label>
-              </div>
-
-              {/* Generate */}
+              <ToggleField
+                title="High Quality"
+                description="Use higher generation quality"
+                checked={highQuality}
+                onChange={setHighQuality}
+              />
 
               <button
                 type="button"
-                onClick={generateSong}
+                onClick={() => void generateSong()}
                 disabled={
                   status === "generating" ||
                   status === "preparing"
@@ -727,8 +1545,6 @@ Make the result original and suitable for the selected genre and mood.
         </div>
       </div>
 
-      {/* Advanced Settings */}
-
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
@@ -737,13 +1553,11 @@ Make the result original and suitable for the selected genre and mood.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Fine tune your AI generation.
+              Fine tune the generated song.
             </p>
           </div>
 
           <div className="space-y-6">
-            {/* Tempo */}
-
             <div>
               <label className="mb-3 block font-semibold">
                 Tempo (BPM)
@@ -756,106 +1570,47 @@ Make the result original and suitable for the selected genre and mood.
                 value={tempo}
                 onChange={(event) =>
                   setTempo(
-                    Number(event.target.value)
+                    Math.min(
+                      240,
+                      Math.max(
+                        40,
+                        Number(event.target.value) ||
+                          40,
+                      ),
+                    ),
                   )
                 }
                 className="w-full rounded-xl border border-white/10 bg-background p-4"
               />
             </div>
 
-            {/* Key */}
+            <SelectField
+              label="Musical Key"
+              value={musicalKey}
+              onChange={setMusicalKey}
+              options={musicalKeys}
+            />
 
-            <div>
-              <label className="mb-3 block font-semibold">
-                Musical Key
-              </label>
+            <SelectField
+              label="Singer"
+              value={singer}
+              onChange={setSinger}
+              options={singers}
+            />
 
-              <select
-                value={musicalKey}
-                onChange={(event) =>
-                  setMusicalKey(
-                    event.target.value
-                  )
-                }
-                className="w-full rounded-xl border border-white/10 bg-background p-4"
-              >
-                {musicalKeys.map((item) => (
-                  <option key={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <RangeField
+              label="Creativity"
+              value={creativity}
+              onChange={setCreativity}
+            />
 
-            {/* Singer */}
-
-            <div>
-              <label className="mb-3 block font-semibold">
-                Singer
-              </label>
-
-              <select
-                value={singer}
-                onChange={(event) =>
-                  setSinger(event.target.value)
-                }
-                className="w-full rounded-xl border border-white/10 bg-background p-4"
-              >
-                {singers.map((item) => (
-                  <option key={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Creativity */}
-
-            <div>
-              <label className="mb-3 flex justify-between font-semibold">
-                <span>Creativity</span>
-                <span>{creativity}%</span>
-              </label>
-
-              <input
-                type="range"
-                min={1}
-                max={100}
-                value={creativity}
-                onChange={(event) =>
-                  setCreativity(
-                    Number(event.target.value)
-                  )
-                }
-                className="w-full"
-              />
-            </div>
-
-            {/* Similarity */}
-
-            <div>
-              <label className="mb-3 flex justify-between font-semibold">
-                <span>Similarity</span>
-                <span>{similarity}%</span>
-              </label>
-
-              <input
-                type="range"
-                min={1}
-                max={100}
-                value={similarity}
-                onChange={(event) =>
-                  setSimilarity(
-                    Number(event.target.value)
-                  )
-                }
-                className="w-full"
-              />
-            </div>
+            <RangeField
+              label="Similarity"
+              value={similarity}
+              onChange={setSimilarity}
+            />
           </div>
         </div>
-
-        {/* Negative Prompt */}
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
@@ -864,7 +1619,7 @@ Make the result original and suitable for the selected genre and mood.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Tell AI what should be avoided.
+              Tell the AI what to avoid.
             </p>
           </div>
 
@@ -872,30 +1627,29 @@ Make the result original and suitable for the selected genre and mood.
             value={negativePrompt}
             onChange={(event) =>
               setNegativePrompt(
-                event.target.value
+                event.target.value,
               )
             }
-            placeholder="Example: No distortion, no heavy drums, avoid rap vocals, avoid background noise..."
+            placeholder="Example: no heavy drums, avoid distortion, avoid background noise..."
             className="min-h-[240px] w-full rounded-2xl border border-white/10 bg-background p-5 outline-none focus:border-violet-500/50"
           />
 
           <div className="mt-8 rounded-2xl bg-violet-500/10 p-5">
             <h3 className="font-bold">
-              Generation Tips
+              Generation Pipeline
             </h3>
 
             <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <li>• Mention instruments.</li>
-              <li>• Mention singer style.</li>
-              <li>• Mention language.</li>
-              <li>• Mention mood.</li>
-              <li>• Mention song structure.</li>
+              <li>• Lyrics generation</li>
+              <li>• Song outline generation</li>
+              <li>• Arrangement generation</li>
+              <li>• Metadata generation</li>
+              <li>• Chord progression generation</li>
+              <li>• Browser TTS preview</li>
             </ul>
           </div>
         </div>
       </div>
-
-      {/* Generation Progress */}
 
       <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
         <div className="mb-8 flex items-center justify-between">
@@ -905,7 +1659,7 @@ Make the result original and suitable for the selected genre and mood.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              AI generation pipeline status.
+              Real pipeline progress based on completed API steps.
             </p>
           </div>
 
@@ -915,9 +1669,6 @@ Make the result original and suitable for the selected genre and mood.
                 ? "bg-green-500/10 text-green-400"
                 : status === "error"
                 ? "bg-red-500/10 text-red-400"
-                : status === "generating" ||
-                  status === "preparing"
-                ? "bg-violet-500/10 text-violet-400"
                 : "bg-violet-500/10 text-violet-400"
             }`}
           >
@@ -933,122 +1684,82 @@ Make the result original and suitable for the selected genre and mood.
           </div>
         </div>
 
-        <div className="space-y-8">
-          <ProgressRow
-            title="Preparing Prompt"
-            value={
-              status === "idle"
-                ? 0
-                : Math.min(progress, 20)
-            }
-          />
+        {pipelineStep && (
+          <div className="mb-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
+            <div className="flex items-center gap-3">
+              {status === "generating" ||
+              status === "preparing" ? (
+                <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
+              ) : (
+                <Check className="h-5 w-5 text-green-400" />
+              )}
 
+              <span>{pipelineStep}</span>
+            </div>
+          </div>
+        )}
+
+        <ProgressRow
+          title="AI Song Package"
+          value={
+            progress >= 65
+              ? 100
+              : progress >= 15
+              ? Math.min(
+                  100,
+                  Math.round(
+                    ((progress - 15) / 50) * 100,
+                  ),
+                )
+              : 0
+          }
+        />
+
+        <div className="mt-6">
           <ProgressRow
-            title="Generating Lyrics"
+            title="Chord Progression"
             value={
-              status === "completed"
+              progress >= 100
                 ? 100
-                : status === "generating"
+                : progress >= 75
                 ? Math.min(
-                    Math.max(progress, 20),
-                    65
+                    100,
+                    Math.round(
+                      ((progress - 75) / 25) * 100,
+                    ),
                   )
-                : 0
-            }
-          />
-
-          <ProgressRow
-            title="Composing Music"
-            value={
-              status === "completed"
-                ? 100
-                : status === "generating"
-                ? Math.min(
-                    Math.max(progress - 20, 0),
-                    100
-                  )
-                : 0
-            }
-          />
-
-          <ProgressRow
-            title="Mixing & Mastering"
-            value={
-              status === "completed"
-                ? 100
-                : status === "generating"
-                ? Math.min(
-                    Math.max(progress - 50, 0),
-                    100
-                  )
-                : 0
-            }
-          />
-
-          <ProgressRow
-            title="Final Export"
-            value={
-              status === "completed"
-                ? 100
                 : 0
             }
           />
         </div>
       </div>
-
-      {/* Stats */}
 
       <div className="grid gap-8 lg:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <h3 className="text-xl font-black">
-            Estimated Time
-          </h3>
+        <StatCard
+          title="Song Duration"
+          value={formatDuration(duration)}
+          description="Requested duration"
+          className="text-violet-400"
+        />
 
-          <p className="mt-6 text-5xl font-black text-violet-400">
-            {status === "generating"
-              ? generationTime
-              : "02:18"}
-          </p>
+        <StatCard
+          title="Tempo"
+          value={`${tempo}`}
+          description="BPM"
+          className="text-cyan-400"
+        />
 
-          <p className="mt-3 text-muted-foreground">
-            {status === "completed"
-              ? "Completed"
-              : "Estimated"}
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <h3 className="text-xl font-black">
-            Credits Required
-          </h3>
-
-          <p className="mt-6 text-5xl font-black text-cyan-400">
-            {highQuality ? 25 : 15}
-          </p>
-
-          <p className="mt-3 text-muted-foreground">
-            AI Credits
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <h3 className="text-xl font-black">
-            Output Quality
-          </h3>
-
-          <p className="mt-6 text-5xl font-black text-green-500">
-            {highQuality ? "HQ" : "STD"}
-          </p>
-
-          <p className="mt-3 text-muted-foreground">
-            {highQuality
-              ? "Studio Master"
-              : "Standard"}
-          </p>
-        </div>
+        <StatCard
+          title="Output"
+          value={
+            status === "completed"
+              ? "Ready"
+              : "Pending"
+          }
+          description="Generation status"
+          className="text-green-400"
+        />
       </div>
-
-      {/* Generated Song */}
 
       <div className="grid gap-8 xl:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
@@ -1059,7 +1770,7 @@ Make the result original and suitable for the selected genre and mood.
               </h2>
 
               <p className="mt-2 text-muted-foreground">
-                Preview and export your AI song.
+                Current AI song package.
               </p>
             </div>
 
@@ -1072,147 +1783,408 @@ Make the result original and suitable for the selected genre and mood.
                 <Music4 className="h-10 w-10 text-white" />
               </div>
 
-              <div>
-                <h3 className="text-2xl font-bold">
+              <div className="min-w-0">
+                <h3 className="truncate text-2xl font-bold">
                   {generatedSongTitle}
                 </h3>
 
                 <p className="mt-2 text-muted-foreground">
-                  {Math.floor(duration / 60)
-                    .toString()
-                    .padStart(2, "0")}
-                  :
-                  {(duration % 60)
-                    .toString()
-                    .padStart(2, "0")}{" "}
-                  • Stereo •{" "}
-                  {highQuality ? "WAV" : "MP3"}
+                  {formatDuration(
+                    metadata.durationSeconds ||
+                      duration,
+                  )}{" "}
+                  • {metadata.key || musicalKey} •{" "}
+                  {metadata.timeSignature || "4/4"}
                 </p>
               </div>
             </div>
 
-            <div className="mt-8">
-              {audioUrl ? (
-                <audio
-                  controls
-                  src={audioUrl}
-                  className="w-full"
-                />
-              ) : (
-                <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
-                  Audio generation is not connected
-                  yet. The AI text/lyrics generation
-                  is active.
-                </div>
-              )}
-            </div>
+            {songDescription && (
+              <div className="mt-8 rounded-2xl border border-white/10 p-5">
+                <p className="text-sm leading-7 text-muted-foreground">
+                  {songDescription}
+                </p>
+              </div>
+            )}
 
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               <button
                 type="button"
-                disabled={!audioUrl}
-                className="rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 py-4 font-semibold text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Download WAV
-              </button>
-
-              <button
-                type="button"
-                disabled={!audioUrl}
-                className="rounded-2xl border border-white/10 py-4 font-semibold transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Download MP3
-              </button>
-
-              <button
-                type="button"
+                onClick={() =>
+                  void copyText(generatedLyrics)
+                }
                 disabled={!generatedLyrics}
-                onClick={copyLyrics}
-                className="rounded-2xl border border-white/10 py-4 font-semibold transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {copied
-                  ? "Lyrics Copied"
-                  : "Copy Lyrics"}
+                {copied ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+                Copy Lyrics
               </button>
 
               <button
                 type="button"
-                className="rounded-2xl border border-white/10 py-4 font-semibold transition hover:bg-white/5"
+                onClick={() =>
+                  exportCurrent("Project (.json)")
+                }
+                disabled={status !== "completed"}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 py-4 font-semibold disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Share
+                Export Project
               </button>
             </div>
           </div>
         </div>
 
-        {/* Song Details */}
-
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-black">
-              Song Details
-            </h2>
+          <div className="mb-8 flex items-center gap-3">
+            <Volume2 className="h-7 w-7 text-cyan-400" />
 
-            <p className="mt-2 text-muted-foreground">
-              AI generation metadata.
-            </p>
+            <div>
+              <h2 className="text-2xl font-black">
+                TTS Preview
+              </h2>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Browser text-to-speech. This does not create an audio file.
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-5">
-            <DetailRow
-              label="Genre"
-              value={genre}
-            />
-
-            <DetailRow
-              label="Mood"
-              value={mood}
-            />
-
-            <DetailRow
-              label="Language"
-              value={language}
-            />
-
-            <DetailRow
-              label="AI Model"
-              value={model}
-            />
-
-            <DetailRow
-              label="Duration"
-              value={`${duration} sec`}
-            />
-
-            <DetailRow
-              label="Tempo"
-              value={`${tempo} BPM`}
-            />
-
-            <DetailRow
-              label="Musical Key"
-              value={musicalKey}
-            />
-
-            <DetailRow
-              label="Singer"
-              value={singer}
-            />
-
-            <div className="flex justify-between rounded-xl border border-white/10 p-5">
-              <span>Quality</span>
-
-              <span className="font-semibold text-green-500">
-                {highQuality
-                  ? "Studio HQ"
-                  : "Standard"}
-              </span>
+          {!speechSupported && (
+            <div className="mb-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-300">
+              Text-to-speech is not available in this browser.
             </div>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              ["lyrics", "Lyrics"],
+              ["outline", "Outline"],
+              ["arrangement", "Arrangement"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() =>
+                  setSpeechTarget(
+                    value as
+                      | "lyrics"
+                      | "outline"
+                      | "arrangement",
+                  )
+                }
+                className={`rounded-xl border p-3 text-sm font-semibold ${
+                  speechTarget === value
+                    ? "border-violet-500 bg-violet-500/10 text-violet-300"
+                    : "border-white/10"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <RangeNumberField
+              label="Speech Rate"
+              value={speechRate}
+              min={0.5}
+              max={1.5}
+              step={0.1}
+              onChange={setSpeechRate}
+            />
+
+            <RangeNumberField
+              label="Pitch"
+              value={speechPitch}
+              min={0}
+              max={2}
+              step={0.1}
+              onChange={setSpeechPitch}
+            />
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            {!speechSpeaking && (
+              <button
+                type="button"
+                onClick={speakCurrentTarget}
+                disabled={!speechSupported}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 py-3 font-semibold disabled:opacity-40"
+              >
+                <Play className="h-4 w-4" />
+                Speak
+              </button>
+            )}
+
+            {speechSpeaking &&
+              !speechPaused && (
+                <button
+                  type="button"
+                  onClick={pauseSpeech}
+                  className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 font-semibold"
+                >
+                  <Pause className="h-4 w-4" />
+                  Pause
+                </button>
+              )}
+
+            {speechSpeaking &&
+              speechPaused && (
+                <button
+                  type="button"
+                  onClick={resumeSpeech}
+                  className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 font-semibold"
+                >
+                  <Play className="h-4 w-4" />
+                  Resume
+                </button>
+              )}
+
+            {speechSpeaking && (
+              <button
+                type="button"
+                onClick={stopSpeech}
+                className="flex items-center gap-2 rounded-xl border border-red-500/20 px-5 py-3 font-semibold text-red-300"
+              >
+                <Square className="h-4 w-4" />
+                Stop
+              </button>
+            )}
+
+            {!speechSupported && (
+              <button
+                type="button"
+                disabled
+                className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 font-semibold opacity-40"
+              >
+                <VolumeX className="h-4 w-4" />
+                TTS unavailable
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Generated Lyrics */}
+      <div className="grid gap-8 xl:grid-cols-2">
+        <ContentCard
+          title="Song Outline"
+          description="Generated song structure and narrative flow."
+          icon={
+            <ListMusic className="h-7 w-7 text-violet-400" />
+          }
+        >
+          {outlineText ? (
+            <pre className="whitespace-pre-wrap font-sans leading-7 text-muted-foreground">
+              {outlineText}
+            </pre>
+          ) : (
+            <EmptyContent text="Generate a song to create the outline." />
+          )}
+
+          <ContentActions
+            hasContent={Boolean(outlineText)}
+            onCopy={() =>
+              void copyText(outlineText)
+            }
+            onDownload={() =>
+              exportCurrent("Outline (.txt)")
+            }
+          />
+        </ContentCard>
+
+        <ContentCard
+          title="Arrangement"
+          description="Section-by-section instrumentation and production."
+          icon={
+            <Guitar className="h-7 w-7 text-cyan-400" />
+          }
+        >
+          {arrangementText ? (
+            <pre className="whitespace-pre-wrap font-sans leading-7 text-muted-foreground">
+              {arrangementText}
+            </pre>
+          ) : (
+            <EmptyContent text="Generate a song to create the arrangement." />
+          )}
+
+          <ContentActions
+            hasContent={Boolean(arrangementText)}
+            onCopy={() =>
+              void copyText(arrangementText)
+            }
+            onDownload={() =>
+              exportCurrent("Arrangement (.txt)")
+            }
+          />
+        </ContentCard>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-black">
+                Chord Progression
+              </h2>
+
+              <p className="mt-2 text-muted-foreground">
+                Generated by the existing chord progression API.
+              </p>
+            </div>
+
+            <Guitar className="h-8 w-8 text-violet-500" />
+          </div>
+
+          {chords.formatted ? (
+            <div className="rounded-2xl border border-white/10 bg-background p-6">
+              <p className="whitespace-pre-wrap text-xl font-bold leading-9">
+                {chords.formatted}
+              </p>
+            </div>
+          ) : chords.progression.length ? (
+            <div className="space-y-4">
+              {chords.progression.map(
+                (item, index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl border border-white/10 p-5"
+                  >
+                    <div className="flex flex-wrap gap-3">
+                      {normalizeStringArray(
+                        item.chords,
+                      ).map(
+                        (chord, chordIndex) => (
+                          <span
+                            key={`${chord}-${chordIndex}`}
+                            className="rounded-xl bg-violet-500/10 px-4 py-2 font-bold text-violet-300"
+                          >
+                            {chord}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          ) : (
+            <EmptyContent text="Generate a song to calculate the chord progression." />
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              void (async () => {
+                try {
+                  setError("");
+
+                  const result =
+                    await fetchChords(
+                      musicalKey,
+                      mood,
+                    );
+
+                  setChords(result);
+                } catch (err) {
+                  setError(
+                    err instanceof Error
+                      ? err.message
+                      : "Unable to refresh chords.",
+                  );
+                }
+              })();
+            }}
+            className="mt-6 flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 font-semibold transition hover:bg-white/5"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Chords
+          </button>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="mb-8 flex items-center gap-3">
+            <Tags className="h-7 w-7 text-green-400" />
+
+            <div>
+              <h2 className="text-2xl font-black">
+                Song Metadata
+              </h2>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Metadata generated together with the song package.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <DetailRow
+              label="Title"
+              value={
+                metadata.title ||
+                generatedSongTitle
+              }
+            />
+
+            <DetailRow
+              label="Genre"
+              value={metadata.genre}
+            />
+
+            <DetailRow
+              label="Mood"
+              value={metadata.mood}
+            />
+
+            <DetailRow
+              label="Language"
+              value={metadata.language}
+            />
+
+            <DetailRow
+              label="Tempo"
+              value={`${metadata.tempo} BPM`}
+            />
+
+            <DetailRow
+              label="Key"
+              value={metadata.key}
+            />
+
+            <DetailRow
+              label="Time Signature"
+              value={metadata.timeSignature}
+            />
+
+            <DetailRow
+              label="Singer"
+              value={metadata.singer}
+            />
+
+            <DetailRow
+              label="Vocal Type"
+              value={metadata.vocalType}
+            />
+
+            <DetailRow
+              label="Theme"
+              value={metadata.theme || "Not specified"}
+            />
+
+            <DetailRow
+              label="Tags"
+              value={
+                metadata.tags.length
+                  ? metadata.tags.join(", ")
+                  : "None"
+              }
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
@@ -1222,123 +2194,86 @@ Make the result original and suitable for the selected genre and mood.
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              AI generated lyrics preview.
+              AI-generated lyrics from the same song package.
             </p>
           </div>
 
-          <div className="min-h-[350px] rounded-2xl border border-white/10 bg-background p-6">
+          <div className="min-h-[400px] rounded-2xl border border-white/10 bg-background p-6">
             {generatedLyrics ? (
               <pre className="whitespace-pre-wrap font-sans leading-8 text-muted-foreground">
                 {generatedLyrics}
               </pre>
             ) : (
-              <div className="flex min-h-[300px] items-center justify-center text-center text-muted-foreground">
-                Generate a song to see the AI
-                generated lyrics here.
-              </div>
+              <EmptyContent text="Generate a song to see the lyrics here." />
             )}
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-4">
-            <button
-              type="button"
-              onClick={copyLyrics}
-              disabled={!generatedLyrics}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-
-              {copied
-                ? "Copied"
-                : "Copy Lyrics"}
-            </button>
-
-            <button
-              type="button"
-              disabled={!generatedLyrics}
-              className="rounded-xl border border-white/10 px-6 py-3 font-semibold hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Download TXT
-            </button>
-
-            <button
-              type="button"
-              disabled={!generatedLyrics}
-              className="rounded-xl border border-white/10 px-6 py-3 font-semibold hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Download PDF
-            </button>
-          </div>
+          <ContentActions
+            hasContent={Boolean(generatedLyrics)}
+            onCopy={() =>
+              void copyText(generatedLyrics)
+            }
+            onDownload={() =>
+              exportCurrent("Lyrics (.txt)")
+            }
+          />
         </div>
-
-        {/* History */}
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-black">
-              Generation History
+              Export Options
             </h2>
 
             <p className="mt-2 text-muted-foreground">
-              Previously generated songs.
+              Export only data that has actually been generated.
             </p>
           </div>
 
           <div className="space-y-4">
-            {historySongs.map((song) => (
-              <div
-                key={song}
-                className="flex items-center justify-between rounded-2xl border border-white/10 p-5 transition hover:border-violet-500 hover:bg-white/5"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500">
-                    <Music4 className="h-6 w-6 text-white" />
-                  </div>
+            {exportFormats.map((format) => {
+              const enabled =
+                format === "Lyrics (.txt)"
+                  ? Boolean(generatedLyrics)
+                  : format === "Outline (.txt)"
+                  ? Boolean(outlineText)
+                  : format === "Arrangement (.txt)"
+                  ? Boolean(arrangementText)
+                  : status === "completed";
 
-                  <div>
-                    <h3 className="font-semibold">
-                      {song}
-                    </h3>
-
-                    <p className="text-sm text-muted-foreground">
-                      Generated Recently
-                    </p>
-                  </div>
-                </div>
-
+              return (
                 <button
+                  key={format}
                   type="button"
+                  disabled={!enabled}
                   onClick={() =>
-                    setPrompt(
-                      `Create a song similar in mood and style to ${song}`
-                    )
+                    exportCurrent(format)
                   }
-                  className="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5"
+                  className="flex w-full items-center justify-between rounded-2xl border border-white/10 p-5 transition hover:border-violet-500 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Open
+                  <span className="flex items-center gap-3">
+                    <FileText className="h-5 w-5" />
+                    {format}
+                  </span>
+
+                  <span className="text-violet-400">
+                    Export
+                  </span>
                 </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Suggestions / Export / Insights */}
-
       <div className="grid gap-8 xl:grid-cols-3">
-        {/* Suggestions */}
-
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <h2 className="text-2xl font-black">
             AI Suggestions
           </h2>
 
           <p className="mt-2 text-muted-foreground">
-            Improve your prompt with one click.
+            Improve the next generation request.
           </p>
 
           <div className="mt-8 space-y-4">
@@ -1357,125 +2292,70 @@ Make the result original and suitable for the selected genre and mood.
           </div>
         </div>
 
-        {/* Export */}
-
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <h2 className="text-2xl font-black">
-            Export Options
+            Generation State
           </h2>
-
-          <p className="mt-2 text-muted-foreground">
-            Download in professional formats.
-          </p>
 
           <div className="mt-8 space-y-4">
-            {exportFormats.map((format) => (
-              <button
-                key={format}
-                type="button"
-                disabled={
-                  format !== "Lyrics (.txt)" &&
-                  !audioUrl
-                }
-                className="flex w-full items-center justify-between rounded-2xl border border-white/10 p-5 transition hover:border-violet-500 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <span>{format}</span>
-
-                <span className="text-violet-400">
-                  Export
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Insights */}
-
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <h2 className="text-2xl font-black">
-            AI Insights
-          </h2>
-
-          <p className="mt-2 text-muted-foreground">
-            Automatic analysis.
-          </p>
-
-          <div className="mt-8 space-y-5">
-            <InsightRow
-              label="Commercial Score"
-              value="96%"
-              className="text-green-500"
-            />
-
-            <InsightRow
-              label="Originality"
-              value="98%"
-              className="text-cyan-400"
-            />
-
-            <InsightRow
-              label="Production Quality"
+            <DetailRow
+              label="Status"
               value={
-                highQuality
-                  ? "Studio"
-                  : "Standard"
+                status === "completed"
+                  ? "Completed"
+                  : status === "error"
+                  ? "Error"
+                  : status === "generating"
+                  ? "Generating"
+                  : "Ready"
               }
-              className="text-violet-400"
             />
 
-            <InsightRow
-              label="Streaming Ready"
+            <DetailRow
+              label="Lyrics"
               value={
                 generatedLyrics
-                  ? "Yes"
-                  : "Waiting"
+                  ? "Generated"
+                  : "Pending"
               }
-              className="text-green-500"
             />
-          </div>
-        </div>
-      </div>
 
-      {/* Queue / Shortcuts */}
+            <DetailRow
+              label="Outline"
+              value={
+                outlineText
+                  ? "Generated"
+                  : "Pending"
+              }
+            />
 
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <h2 className="text-2xl font-black">
-            AI Queue
-          </h2>
+            <DetailRow
+              label="Arrangement"
+              value={
+                arrangementText
+                  ? "Generated"
+                  : "Pending"
+              }
+            />
 
-          <p className="mt-2 text-muted-foreground">
-            Current generation tasks.
-          </p>
+            <DetailRow
+              label="Chords"
+              value={
+                chords.formatted ||
+                chords.progression.length
+                  ? "Generated"
+                  : "Pending"
+              }
+            />
 
-          <div className="mt-8">
-            {status === "generating" ||
-            status === "preparing" ? (
-              <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="font-semibold">
-                    {generatedSongTitle}
-                  </span>
-
-                  <span>
-                    {progress}%
-                  </span>
-                </div>
-
-                <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 transition-all duration-500"
-                    style={{
-                      width: `${progress}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-muted-foreground">
-                No active generation jobs.
-              </div>
-            )}
+            <DetailRow
+              label="Metadata"
+              value={
+                metadata.title
+                  ? "Generated"
+                  : "Pending"
+              }
+            />
           </div>
         </div>
 
@@ -1484,18 +2364,11 @@ Make the result original and suitable for the selected genre and mood.
             Keyboard Shortcuts
           </h2>
 
-          <p className="mt-2 text-muted-foreground">
-            Speed up your workflow.
-          </p>
-
           <div className="mt-8 space-y-4">
             {[
               ["Ctrl + Enter", "Generate Song"],
-              ["Ctrl + S", "Save Project"],
-              ["Ctrl + D", "Download"],
               ["Ctrl + L", "Copy Lyrics"],
-              ["Ctrl + P", "Play Preview"],
-              ["Ctrl + /", "Open AI Assistant"],
+              ["Ctrl + P", "Play / Pause TTS"],
             ].map(([key, action]) => (
               <div
                 key={key}
@@ -1505,7 +2378,7 @@ Make the result original and suitable for the selected genre and mood.
                   {key}
                 </kbd>
 
-                <span className="text-muted-foreground">
+                <span className="text-right text-sm text-muted-foreground">
                   {action}
                 </span>
               </div>
@@ -1517,6 +2390,149 @@ Make the result original and suitable for the selected genre and mood.
   );
 }
 
+function SelectField({
+  label,
+  icon,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  return (
+    <div>
+      <label className="mb-3 flex items-center gap-2 font-semibold">
+        {icon}
+        {label}
+      </label>
+
+      <select
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        className="w-full rounded-xl border border-white/10 bg-background p-4"
+      >
+        {options.map((item) => (
+          <option key={item}>
+            {item}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function ToggleField({
+  title,
+  description,
+  checked,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between rounded-xl border border-white/10 p-4">
+      <div>
+        <h3 className="font-semibold">
+          {title}
+        </h3>
+
+        <p className="text-sm text-muted-foreground">
+          {description}
+        </p>
+      </div>
+
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) =>
+          onChange(event.target.checked)
+        }
+        className="h-5 w-5"
+      />
+    </label>
+  );
+}
+
+function RangeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-3 flex justify-between font-semibold">
+        <span>{label}</span>
+        <span>{value}%</span>
+      </label>
+
+      <input
+        type="range"
+        min={1}
+        max={100}
+        value={value}
+        onChange={(event) =>
+          onChange(
+            Number(event.target.value),
+          )
+        }
+        className="w-full"
+      />
+    </div>
+  );
+}
+
+function RangeNumberField({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-3 flex justify-between font-semibold">
+        <span>{label}</span>
+        <span>{value.toFixed(1)}</span>
+      </label>
+
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) =>
+          onChange(
+            Number(event.target.value),
+          )
+        }
+        className="w-full"
+      />
+    </div>
+  );
+}
+
 function ProgressRow({
   title,
   value,
@@ -1524,29 +2540,63 @@ function ProgressRow({
   title: string;
   value: number;
 }) {
+  const safeValue = Math.min(
+    100,
+    Math.max(0, value),
+  );
+
   return (
     <div>
       <div className="mb-3 flex justify-between">
         <span>{title}</span>
 
-        <span>{Math.round(value)}%</span>
+        <span>
+          {Math.round(safeValue)}%
+        </span>
       </div>
 
       <div className="h-3 overflow-hidden rounded-full bg-white/10">
         <div
           className={`h-full rounded-full transition-all duration-500 ${
-            value >= 100
+            safeValue >= 100
               ? "bg-green-500"
               : "bg-gradient-to-r from-violet-600 to-cyan-500"
           }`}
           style={{
-            width: `${Math.min(
-              Math.max(value, 0),
-              100
-            )}%`,
+            width: `${safeValue}%`,
           }}
         />
       </div>
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  description,
+  className,
+}: {
+  title: string;
+  value: string;
+  description: string;
+  className: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+      <h3 className="text-xl font-black">
+        {title}
+      </h3>
+
+      <p
+        className={`mt-6 text-5xl font-black ${className}`}
+      >
+        {value}
+      </p>
+
+      <p className="mt-3 text-muted-foreground">
+        {description}
+      </p>
     </div>
   );
 }
@@ -1560,37 +2610,93 @@ function DetailRow({
 }) {
   return (
     <div className="flex justify-between gap-4 rounded-xl border border-white/10 p-5">
-      <span>{label}</span>
+      <span className="text-muted-foreground">
+        {label}
+      </span>
 
-      <span className="text-right font-semibold">
+      <span className="max-w-[65%] text-right font-semibold">
         {value}
       </span>
     </div>
   );
 }
 
-function InsightRow({
-  label,
-  value,
-  className,
+function ContentCard({
+  title,
+  description,
+  icon,
+  children,
 }: {
-  label: string;
-  value: string;
-  className?: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 p-5">
-      <div className="flex justify-between gap-4">
-        <span>{label}</span>
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+      <div className="mb-8 flex items-center gap-4">
+        {icon}
 
-        <span
-          className={`font-bold ${
-            className || ""
-          }`}
-        >
-          {value}
-        </span>
+        <div>
+          <h2 className="text-2xl font-black">
+            {title}
+          </h2>
+
+          <p className="mt-1 text-muted-foreground">
+            {description}
+          </p>
+        </div>
       </div>
+
+      <div className="min-h-[280px] rounded-2xl border border-white/10 bg-background p-6">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ContentActions({
+  hasContent,
+  onCopy,
+  onDownload,
+}: {
+  hasContent: boolean;
+  onCopy: () => void;
+  onDownload: () => void;
+}) {
+  return (
+    <div className="mt-6 flex flex-wrap gap-3">
+      <button
+        type="button"
+        disabled={!hasContent}
+        onClick={onCopy}
+        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <Copy className="h-4 w-4" />
+        Copy
+      </button>
+
+      <button
+        type="button"
+        disabled={!hasContent}
+        onClick={onDownload}
+        className="flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <FileText className="h-4 w-4" />
+        Download
+      </button>
+    </div>
+  );
+}
+
+function EmptyContent({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <div className="flex min-h-[250px] items-center justify-center text-center text-muted-foreground">
+      {text}
     </div>
   );
 }
